@@ -85,25 +85,33 @@ print(f"Loaded {len(df):,} rows.")
 
 # data_quality_report(df, TEXT_COLUMNS)
 
+# for col in TEXT_COLUMNS:
+#     short = df_processed.loc[
+#         df_processed[col].notna() & (df_processed[col].str.len() < 20),
+#         col
+#     ]
+
+#     print(f"\n--- {col} ---")
+#     print(short.value_counts().head(20))
+
 # # ===== 6. PROCESS DATA =====
 
-# df_processed = df.copy()
+df_processed = df.copy()
 
-# for col in TEXT_COLUMNS:
-#     print(f"Removing HTML from {col}...")
-#     df_processed[col] = df_processed[col].apply(remove_html)
-
-# ===== 7. SAMPLE CHECK =====
-
-# APP_ID = 3298020
-
-# sample = df_processed.loc[df_processed["app_id"] == APP_ID]
-# print(sample)
 for col in TEXT_COLUMNS:
-    short = df.loc[
-        df[col].notna() & (df[col].str.len() < 20),
-        col
-    ]
+    print(f"Removing HTML from {col}...")
+    df_processed[col] = df_processed[col].apply(remove_html)
 
-    print(f"\n--- {col} ---")
-    print(short.value_counts().head(20))
+for col in TEXT_COLUMNS:
+    df_processed = df_processed[df_processed[col].fillna("").str.strip().str.len() >= 20].copy()
+
+# ===== 7. SAVE DATA INTO CSV =====
+
+df_processed.to_csv(
+    "data/processed/descriptions_cleaned.zip",
+    index=False,
+    compression={
+        "method": "zip",
+        "archive_name": "descriptions_cleaned.csv"
+    }
+)
