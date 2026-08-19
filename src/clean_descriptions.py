@@ -107,11 +107,11 @@ for col in TEXT_COLUMNS:
 
 # ===== 7. SAVE DATA INTO CSV =====
 
-df_processed.to_csv(
-    "data/processed/descriptions_cleaned.zip",
-    index=False,
-    compression={
-        "method": "zip",
-        "archive_name": "descriptions_cleaned.csv"
-    }
-)
+# df_processed.to_csv(
+#     "data/processed/descriptions_cleaned.zip",
+#     index=False,
+#     compression={
+#         "method": "zip",
+#         "archive_name": "descriptions_cleaned.csv"
+#     }
+# )
