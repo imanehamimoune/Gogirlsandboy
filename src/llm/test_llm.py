@@ -1,7 +1,7 @@
 from openai import OpenAI
 
-LM_STUDIO_BASE_URL = "http://127.0.0.1:1234/v1"
-LM_STUDIO_MODEL = "deepseek/deepseek-r1-0528-qwen3-8b"
+LM_STUDIO_BASE_URL = "http://127.0.0.1:1234"
+LM_STUDIO_MODEL = "google/gemma-4-12b-qat"
 
 def chat(messages: list[dict]) -> str:
     client = OpenAI(
