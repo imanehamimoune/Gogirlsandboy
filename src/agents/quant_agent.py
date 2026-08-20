@@ -1,9 +1,12 @@
+import time
+import json
 from pathlib import Path
 
-from src.llm.lm_studio_client import ask_llm
+from src.llm.lm_studio_client import chat
 
 
 PROMPT_PATH = Path("src/prompts/quant_agent_prompt.txt")
+OUTPUT_PATH = Path("outputs/quant_agent/quant_results.json")
 
 
 def run_quant_agent(publisher_data):
@@ -13,10 +16,10 @@ def run_quant_agent(publisher_data):
     )
 
     user_prompt = f"""
-    Analyze the following quantitative publisher evidence:
+Analyze the following quantitative publisher evidence:
 
-    {publisher_data}
-    """
+{json.dumps(publisher_data, indent=2)}
+"""
 
     messages = [
         {
@@ -29,7 +32,26 @@ def run_quant_agent(publisher_data):
         }
     ]
 
-    return ask_llm(
-        messages,
-        model="your-model"
+    response = chat(messages)
+
+    return response
+
+
+if __name__ == "__main__":
+    start_time = time.perf_counter()
+
+    # Quantitative data will eventually come from quant_tools.py
+    publisher_data = {
+        "example": "Replace this with quant_tools output"
+    }
+
+    response = run_quant_agent(publisher_data)
+
+    print(response)
+
+    end_time = time.perf_counter()
+
+    print(
+        f"// Total runtime: "
+        f"{end_time - start_time:.2f} seconds"
     )

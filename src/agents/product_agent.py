@@ -3,7 +3,7 @@ from pathlib import Path
 from src.llm.lm_studio_client import ask_llm
 
 
-PROMPT_PATH = Path("src/prompts/product_agent.txt")
+PROMPT_PATH = Path("src/prompts/product_agent_prompt.txt")
 
 
 def run_product_agent(product_data):
