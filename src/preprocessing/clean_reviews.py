@@ -53,7 +53,7 @@ Expected Output:
 -code generating a cleaned reviews csv file
 '''
 # Request: 2026-08-19 22:24 CET.
-# Author: Anna Andruszkiewicz (prompt and adjustments), ChatGPT (code)
+# Author: Anna Andruszkiewicz (prompt and adjustments), Claude (code)
 
 
 import pandas as pd
