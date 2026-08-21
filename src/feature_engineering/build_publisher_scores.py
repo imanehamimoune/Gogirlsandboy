@@ -68,7 +68,7 @@ import pandas as pd
 pd.set_option("display.width", 140)
 
 SRC = "data/processed/master_dataset.zip"
-OUT = "data/processed/publisher_features.csv"
+OUT = "data/feature_analysis/publisher_features.csv"
 MIN_GAMES = 10
 RECENT_YEARS = 2
 
