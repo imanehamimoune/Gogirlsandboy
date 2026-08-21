@@ -68,18 +68,18 @@ import pandas as pd
 pd.set_option("display.width", 140)
 
 SRC = "data/processed/"
-OUT = "data/processed/master_dataset.zip"
+OUT = "data/processed/master_dataset.csv"
 
 # ---------------------------------------------------------------------------
 # 1. LOAD + PER-FILE INSPECTION
 # ---------------------------------------------------------------------------
-games = pd.read_csv(SRC + "games_cleaned.csv", encoding="utf-8-sig", low_memory=False)
-reviews = pd.read_csv(SRC + "reviews_cleaned.csv", encoding="utf-8-sig", low_memory=False)
-steamspy = pd.read_csv(SRC + "steamspy_insights_cleaned.csv", encoding="utf-8-sig", low_memory=False)
-
 with zipfile.ZipFile(SRC + "categories_tags_genres_merged.zip") as z:
     with z.open("cleaned_merged/categories, tags, genres_merged_by_app_id.csv") as f:
         ctg = pd.read_csv(f, encoding="utf-8-sig", low_memory=False)
+
+games = pd.read_csv(SRC + "games_cleaned.csv", encoding="utf-8-sig", low_memory=False)
+reviews = pd.read_csv(SRC + "reviews_cleaned.csv", encoding="utf-8-sig", low_memory=False)
+steamspy = pd.read_csv(SRC + "steamspy_insights_cleaned.csv", encoding="utf-8-sig", low_memory=False)
 
 sources = {
     "categories_tags_genres": ctg,
@@ -134,14 +134,24 @@ steamspy = clean_placeholders(steamspy)
 # 3. RESOLVE COLUMN-NAME COLLISIONS BEFORE MERGING
 # ---------------------------------------------------------------------------
 # Both categories_tags_genres and steamspy carry a "genres" column, and both
-# games and steamspy carry a "languages" column. These are two independently
-# scraped signals for the *same* concept, not identical duplicates (checked:
-# only ~65% match after normalizing casing/order), so both are kept but
-# renamed up front to avoid pandas' auto "_x"/"_y" suffixing, which would be
-# hard to interpret later.
-steamspy = steamspy.rename(columns={"genres": "genres_steamspy", "languages": "languages_steamspy"})
+# games and steamspy carry a "languages" column AND an "is_free" column.
+# These are independently scraped signals for the same concept, not
+# guaranteed-identical duplicates (genres_ctg vs genres_steamspy only agree
+# ~65% of the time), so all of them are kept but renamed up front to avoid
+# pandas' auto "_x"/"_y" suffixing, which would be hard to interpret later
+# and, in is_free's case, would silently break any code referencing
+# master["is_free"] after the merge (that column no longer exists as such --
+# it becomes is_free_x/is_free_y).
+steamspy = steamspy.rename(columns={
+    "genres": "genres_steamspy",
+    "languages": "languages_steamspy",
+    "is_free": "is_free_steamspy",
+})
 ctg = ctg.rename(columns={"genres": "genres_ctg"})
-games = games.rename(columns={"languages": "languages_games"})
+games = games.rename(columns={
+    "languages": "languages_games",
+    "is_free": "is_free_games",
+})
 
 # record each source's app_id set BEFORE merging, to build provenance flags
 id_sets = {name: set(df["app_id"]) for name, df in [
@@ -190,6 +200,7 @@ print((master.isna().mean() * 100).round(2).to_string())
 print("\nredundant-after-merge columns flagged:")
 print("  genres_ctg vs genres_steamspy -> same concept, two independent sources, kept both")
 print("  languages_games vs languages_steamspy -> same concept, two independent sources, kept both")
+print("  is_free_games vs is_free_steamspy -> same concept, two independent sources, kept both (see agreement check in Step 7)")
 print("  reviews.positive/negative vs steamspy.steamspy_positive/steamspy_negative -> overlapping vote-count signals from two sources, kept both for cross-checking")
 
 # ---------------------------------------------------------------------------
@@ -214,12 +225,27 @@ print("\nCategorical casing check: no within-file casing collisions found in "
 #     mostly demos with no listed price) the value is genuinely unknown and
 #     is left as NaN. Written to NEW columns so the original price_final /
 #     price_initial columns are never overwritten.
+#
+#     is_free exists in BOTH games and steamspy (renamed is_free_games /
+#     is_free_steamspy in Step 3 to avoid the merge's silent _x/_y
+#     suffixing). is_free_games is used here specifically -- not
+#     is_free_steamspy -- because price_final/price_initial are ALSO from
+#     games_cleaned.csv, so using that same source's flag keeps the fill
+#     internally consistent rather than trusting a different source's
+#     opinion about a fact tied to this source's price fields.
 master["price_final_clean"] = master["price_final"]
 master["price_initial_clean"] = master["price_initial"]
-free_mask = master["is_free"] == True  # noqa: E712
+free_mask = master["is_free_games"] == True  # noqa: E712
 master.loc[free_mask, "price_final_clean"] = master.loc[free_mask, "price_final_clean"].fillna(0.0)
 master.loc[free_mask, "price_initial_clean"] = master.loc[free_mask, "price_initial_clean"].fillna(0.0)
-print(f"\nprice_final_clean: filled {free_mask.sum()} is_free rows' missing price with 0.0 (free = price 0, not unknown)")
+print(f"\nprice_final_clean: filled {free_mask.sum()} is_free_games rows' missing price with 0.0 (free = price 0, not unknown)")
+
+# sanity check: is_free is normally an objective fact (unlike genre tagging,
+# which is inherently a bit subjective), so if the two sources disagree
+# often, that's a real data-quality signal worth surfacing, not silently
+# picking one and moving on.
+agreement = (master["is_free_games"] == master["is_free_steamspy"]).mean()
+print(f"is_free_games vs is_free_steamspy agreement rate: {agreement*100:.1f}%")
 
 # (b) Everything else stays NaN, on purpose:
 #   - tags/categories/genres_ctg missing WHILE source_categories_tags_genres
