@@ -65,16 +65,16 @@ import pandas as pd
 
 pd.set_option("display.width", 140)
 
-SRC = "./"
-OUT = "./master_dataset.csv"
+SRC = "data/preprocessed/"
+OUT = "data/preprocessed/master_dataset.csv"
 
 # ---------------------------------------------------------------------------
 # 1. LOAD + PER-FILE INSPECTION
 # ---------------------------------------------------------------------------
-ctg = pd.read_csv(SRC + "categories_tags_genres_merged_by_app_id.csv", encoding="utf-8-sig")
-games = pd.read_csv(SRC + "games.csv", encoding="utf-8-sig", low_memory=False)
+ctg = pd.read_csv(SRC + "categories_tags_genres_merged.zip", encoding="utf-8-sig")
+games = pd.read_csv(SRC + "games_cleaned.csv", encoding="utf-8-sig", low_memory=False)
 reviews = pd.read_csv(SRC + "reviews_cleaned.csv", encoding="utf-8-sig", low_memory=False)
-steamspy = pd.read_csv(SRC + "steamspy_insights_clean.csv", encoding="utf-8-sig", low_memory=False)
+steamspy = pd.read_csv(SRC + "steamspy_insights_cleaned.csv", encoding="utf-8-sig", low_memory=False)
 
 sources = {
     "categories_tags_genres": ctg,
