@@ -1,4 +1,4 @@
-'''
+r"""
 Role:
 You are a senior Data Engineer and Data Analyst with strong Python/Pandas expertise,
 focused on cleaning messy real-world datasets without overcomplicating the solution.
@@ -50,7 +50,7 @@ Constraints (Do Not):
 - Don't overengineer — no unnecessary complexity, config layers, or premature generalization.
 Expected Output:
 -code generating a cleaned reviews csv file
-'''
+"""
 # Request: 2026-08-19 22:24 CET.
 # Author: Anna Andruszkiewicz (prompt and adjustments), Claude (code)
 
@@ -60,7 +60,7 @@ import re
 import html
 
 # 1. LOAD — backslash-escaped quotes inside `reviews` break the default C parser
-reviews = pd.read_csv('reviews.csv', escapechar='\\', engine='python')
+reviews = pd.read_csv('data/raw/reviews.zip', escapechar='\\', engine='python')
 
 # 2. NORMALIZE PLACEHOLDER NULLS ('\N' truncates to the string 'N' after parsing)
 numeric_like_cols = ['review_score', 'positive', 'negative', 'total', 'metacritic_score',
@@ -120,10 +120,10 @@ assert reviews['app_id'].duplicated().sum() == 0
 assert reviews.duplicated().sum() == 0
 
 # 9. SAVE — never touch the original file
-reviews.to_csv('reviews_cleaned.csv', index=False)
+reviews.to_csv('data/processed/reviews_cleaned.csv', index=False)
 
 # 10. VALIDATE THE ACTUAL OUTPUT
-check = pd.read_csv('reviews_cleaned.csv')
+check = pd.read_csv('data/processed/reviews_cleaned.csv')
 assert len(check) == len(reviews)
 assert check['app_id'].duplicated().sum() == 0
 assert check.duplicated().sum() == 0
