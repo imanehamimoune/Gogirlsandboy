@@ -65,7 +65,6 @@ Author: Tung-Jui Lin (Prompt and Adjustments)
 
 import pandas as pd
 
-
 # ====================================================================
 # TAGS
 # ====================================================================
@@ -1113,3 +1112,58 @@ print(top5_game_share_pct)
 #Steam Achievements          54651     40.665064
 #Full controller support     33009     24.561547
 #Steam Cloud                 28792     21.423735
+
+
+'''
+Role: You are a Data Engineer with strong Python/Pandas expertise, merging three long-format CSVs into one wide-format dataset on app_id.
+Context: Three files — tags.csv, categories.csv, genres.csv — each long-format (one row per app_id + value pair, e.g. tags.csv has app_id and tag).
+Objective: Produce categories_tags_genres_merged.csv: one row per app_id, with categories, tags, and genres each collapsed into a single comma-separated string column. No app_id should be lost, and no value invented.
+Tasks:
+
+Load all three files; report shape and unique app_id count for each (confirming each file truly has one row per app_id before merging).
+Outer-merge all three on app_id, so every app_id present in any file is kept. An app_id missing from one source gets a real NaN there, not a fabricated value or empty string.
+Validate: no duplicate app_ids, row count equals the true union of app_ids across the three files, no rows dropped.
+Save as categories_tags_genres_merged.csv and report row count plus how many app_ids came from each source.
+Constraints (Do Not):
+
+Do not drop any app_id, even if it only appears in one source file.
+Do not fabricate values for missing app_ids.
+Do not overwrite the original CSVs.
+'''
+
+import pandas as pd
+
+# ---------------------------------------------------------------------------
+# 1. LOAD + VERIFY (each file already collapsed to one row per app_id)
+# ---------------------------------------------------------------------------
+tags = pd.read_csv("data/processed/tags_cleaned.csv")
+categories = pd.read_csv("data/processed/categories_cleaned.csv")
+genres = pd.read_csv("data/processed/genres_cleaned.csv")
+
+for name, df in [("tags", tags), ("categories", categories), ("genres", genres)]:
+    dup_count = df["app_id"].duplicated().sum()
+    print(f"{name}: shape={df.shape}  unique app_ids={df['app_id'].nunique()}  duplicate app_ids={dup_count}")
+    assert dup_count == 0, f"{name}.csv has duplicate app_ids -- expected one row per app_id"
+
+# ---------------------------------------------------------------------------
+# 2. OUTER MERGE ON app_id -- no app_id lost, missing values stay real NaN
+# ---------------------------------------------------------------------------
+merged = tags.merge(categories, on="app_id", how="outer").merge(genres, on="app_id", how="outer")
+
+# ---------------------------------------------------------------------------
+# 3. VALIDATE
+# ---------------------------------------------------------------------------
+all_ids = set(tags["app_id"]) | set(categories["app_id"]) | set(genres["app_id"])
+print("\nmerged shape:", merged.shape)
+print("duplicate app_ids in merged:", merged["app_id"].duplicated().sum())
+print("row count matches true union of app_ids:", len(merged) == len(all_ids))
+
+for name, df in [("tags", tags), ("categories", categories), ("genres", genres)]:
+    missing = len(all_ids - set(df["app_id"]))
+    print(f"app_ids missing from {name}.csv (present in union but not here): {missing}")
+
+# ---------------------------------------------------------------------------
+# 4. SAVE
+# ---------------------------------------------------------------------------
+merged.to_csv("data/processed/categories_tags_genres_merged.csv", index=False)
+print(f"\nSaved: data/processed/categories_tags_genres_merged.csv  shape={merged.shape}")
