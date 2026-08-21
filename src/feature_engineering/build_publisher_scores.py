@@ -2,9 +2,9 @@
 
 '''
 Role: You are a senior Data Engineer and Analyst with strong Python/Pandas expertise, building a publisher-level feature table from game-level data. Prioritize correct, well-justified aggregation and normalization over cleverness.
-Context: Input is master_dataset.csv — one row per app_id, already merged and cleaned. The next step is to aggregate this to one row per primary_publisher, producing a small set of features usable for ranking/scoring publishers. Some of these features are already naturally bounded ratios; others are raw counts/rates that need normalization before they can be compared or combined meaningfully.
+Context: Input is master_dataset.csv — one row per app_id, already merged and cleaned. The next step is to aggregate this to one row per publisher_primary, producing a small set of features usable for ranking/scoring publishers. Some of these features are already naturally bounded ratios; others are raw counts/rates that need normalization before they can be compared or combined meaningfully.
 
-Objective: Produce publisher_features.csv — one row per primary_publisher — containing exactly the 8 features below, with publishers below a minimum game count excluded, and the appropriate features normalized. Do not touch master_dataset.csv itself.
+Objective: Produce publisher_features.csv — one row per publisher_primary — containing exactly the 8 features below, with publishers below a minimum game count excluded, and the appropriate features normalized. Do not touch master_dataset.csv itself.
 Scope decision to state explicitly (in a code comment) before proceeding:
 * Propose and justify a normalization scale (log transform, min-max, or an alternative such as percentile rank) for each feature that needs one, based on that feature's own distribution — not assumed. Compute skew (or another shape diagnostic) on the actual aggregated data to justify the choice, rather than picking a method up front and hoping it fits.
 Features (all aggregated per publisher):
@@ -23,7 +23,7 @@ Tasks:
     * Compute positive_review_ratio and active_users_rate per game, guarding every division against a zero denominator (-> NaN, never 0 or inf).
     * Parse release_date; compute is_recent per game against the reference "today" described above.
     * Replace review_score == 0 with NaN for averaging purposes only (do not alter the underlying review_score column's meaning elsewhere).
-    * Report how many rows have a missing primary_publisher (these can't be aggregated — exclude them from this table, don't guess a publisher).
+    * Report how many rows have a missing publisher_primary (these can't be aggregated — exclude them from this table, don't guess a publisher).
 3. Aggregate to publisher level using the 8 feature definitions above.
 4. Drop publishers with game_count < 10. Report publisher count before and after this filter.
 5. Normalize the count/rate features (owner_mid count, language_count, game_count, recent_release_count, active_users_rate) using the scale proposed and justified in the scope decision above, writing results to NEW columns (e.g. <feature>_norm) — never overwrite the original. Leave review_score, positive_review_ratio, and recent_release_ratio unnormalized, since they're already bounded and directly interpretable.
@@ -34,7 +34,7 @@ Tasks:
     * The code, plus a short summary: publisher count before/after the game_count filter, the normalization method chosen per feature (with the diagnostic that justified it), and which columns have the most missingness and why.
 
 Constraints (Do Not):
-* Do not drop any game-level row for reasons other than missing primary_publisher (which can't be aggregated at all).
+* Do not drop any game-level row for reasons other than missing publisher_primary (which can't be aggregated at all).
 * Do not fill a NaN ratio/average with 0 — a 0 has a different meaning (e.g. "no reviews at all") than "not enough data to compute."
 * Do not silently let divide-by-zero produce inf — guard explicitly.
 * Do not normalize review_score, positive_review_ratio, or recent_release_ratio — they're already bounded and interpretable as-is.
@@ -42,7 +42,7 @@ Constraints (Do Not):
 * Do not overengineer — no scaling/encoding beyond what's needed for the 5 count/rate features, no speculative extra features.
 
 Expected Output:
-* publisher_features.csv: one row per primary_publisher (game_count >= 10 only), containing the 8 requested features plus normalized (_norm) versions of owner_mid count, language_count, game_count, recent_release_count, and active_users_rate.
+* publisher_features.csv: one row per publisher_primary (game_count >= 10 only), containing the 8 requested features plus normalized (_norm) versions of owner_mid count, language_count, game_count, recent_release_count, and active_users_rate.
 * A short written summary covering: publisher counts before/after filtering, the normalization method and justification per feature, and notable missingness patterns.
 
 Validation:
@@ -55,7 +55,7 @@ Validation:
 
 """
 Build publisher_features.csv from master_dataset.csv: one row per
-primary_publisher, aggregating game-level data into 8 features. Publishers
+publisher_primary, aggregating game-level data into 8 features. Publishers
 with fewer than MIN_GAMES titles are dropped.
 
 Structured to follow the task numbering in the source prompt (Tasks 1-7)
@@ -109,9 +109,9 @@ print(f"Reference 'today' (max release_date in data): {reference_today.date()}")
 df["review_score_for_avg"] = df["review_score"].replace(0, np.nan)
 print("review_score == 0 replaced with NaN in a separate averaging column (original review_score untouched).")
 
-# rows with no primary_publisher can't be aggregated -- report, don't guess
-missing_pub = df["primary_publisher"].isna().sum()
-print(f"Rows with missing primary_publisher (excluded from aggregation): {missing_pub} ({missing_pub/len(df)*100:.1f}%)")
+# rows with no publisher_primary can't be aggregated -- report, don't guess
+missing_pub = df["publisher_primary"].isna().sum()
+print(f"Rows with missing publisher_primary (excluded from aggregation): {missing_pub} ({missing_pub/len(df)*100:.1f}%)")
 
 # =============================================================================
 # TASK 3: AGGREGATE TO PUBLISHER LEVEL
@@ -120,7 +120,7 @@ print("\n" + "=" * 70)
 print("TASK 3: AGGREGATE TO PUBLISHER LEVEL")
 print("=" * 70)
 
-grouped = df.groupby("primary_publisher")
+grouped = df.groupby("publisher_primary")
 publisher_features = grouped.agg(
     game_count=("app_id", "count"),
     review_score=("review_score_for_avg", "mean"),
@@ -204,7 +204,7 @@ print("\n" + "=" * 70)
 print("TASK 6: EXECUTE AND VALIDATE")
 print("=" * 70)
 print("shape:", publisher_features.shape)
-print("one row per publisher (no duplicates):", publisher_features["primary_publisher"].duplicated().sum() == 0)
+print("one row per publisher (no duplicates):", publisher_features["publisher_primary"].duplicated().sum() == 0)
 print("all publishers meet game_count >= MIN_GAMES:", (publisher_features["game_count"] >= MIN_GAMES).all())
 
 inf_check = np.isinf(publisher_features.select_dtypes(include=[np.number])).sum()
@@ -229,7 +229,7 @@ print("\n" + "=" * 70)
 print("TASK 7: SUMMARY")
 print("=" * 70)
 print(f"Publishers: {n_before} before filter -> {n_after} after game_count >= {MIN_GAMES} filter.")
-print(f"Rows excluded upstream for missing primary_publisher: {missing_pub} ({missing_pub/len(df)*100:.1f}% of games).")
+print(f"Rows excluded upstream for missing publisher_primary: {missing_pub} ({missing_pub/len(df)*100:.1f}% of games).")
 print("\nNormalization method per feature (skew computed on this aggregated data):")
 for col, (skew_val, method) in normalization_log.items():
     skew_str = f"skew={skew_val:.2f}" if skew_val is not None else "outlier-driven, not skew-based"
@@ -237,7 +237,7 @@ for col, (skew_val, method) in normalization_log.items():
 print("\nColumns with the most missingness:")
 print(missingness[missingness > 0].sort_values(ascending=False).to_string() or "  none")
 print("\nTop 10 publishers by review_score (min 10 games, 0s excluded from average):")
-print(publisher_features.nlargest(10, "review_score")[["primary_publisher", "game_count", "review_score"]].to_string(index=False))
+print(publisher_features.nlargest(10, "review_score")[["publisher_primary", "game_count", "review_score"]].to_string(index=False))
 
 
 
@@ -245,7 +245,7 @@ print(publisher_features.nlargest(10, "review_score")[["primary_publisher", "gam
 ''' PART 2: EVALUATING PUBLISHER SCORES '''
 '''
 Role: You are a senior Data Engineer and Analyst with strong Python/Pandas expertise, building a weighted scoring and ranking layer on top of an existing publisher-level feature table. Prioritize transparency and easy adjustability of every weight/assumption over cleverness.
-Context: Input is publisher_features.csv — one row per primary_publisher, already aggregated and normalized (contains raw features like review_score, avg_owners_mid, avg_language_count, avg_positive_review_ratio, avg_active_users_rate, recent_release_ratio, game_count, recent_release_count, plus their _norm counterparts where applicable). The next step is to combine these into 4 weighted dimension scores and one overall weighted score, then rank publishers by it.
+Context: Input is publisher_features.csv — one row per publisher_primary, already aggregated and normalized (contains raw features like review_score, avg_owners_mid, avg_language_count, avg_positive_review_ratio, avg_active_users_rate, recent_release_ratio, game_count, recent_release_count, plus their _norm counterparts where applicable). The next step is to combine these into 4 weighted dimension scores and one overall weighted score, then rank publishers by it.
 
 Objective: Produce publisher_scores.csv — one row per publisher — containing the 4 dimension scores, the overall weighted score, and a rank. Do not touch publisher_features.csv itself.
 Weighting scheme (as specified): Scale & Reach (35%) = 80% player count (reach) + 20% language count Quality (30%) = 50/50 split of review score and positive review ratio Engagement (20%) = no sub-weights specified Growth & Momentum (15%) = 60% ratio + 40% games count
@@ -278,7 +278,7 @@ Constraints (Do Not):
 * Do not overengineer — no additional dimensions, no speculative features, no scaling beyond what's needed to combine review_score with avg_positive_review_ratio.
 
 Expected Output:
-* publisher_scores.csv: one row per publisher, containing rank, primary_publisher, game_count, the 4 dimension scores (scale_reach_score, quality_score, engagement_score, momentum_score), and overall_score.
+* publisher_scores.csv: one row per publisher, containing rank, publisher_primary, game_count, the 4 dimension scores (scale_reach_score, quality_score, engagement_score, momentum_score), and overall_score.
 * A short written summary covering: the top-ranked publishers with their dimension breakdown, and the two stated assumptions for review/override.
 
 Validation:
@@ -417,14 +417,14 @@ for c in DIMS + ["overall_score"]:
     in_range = vals.between(0, 1).all()
     print(f"  {c:20s} min={vals.min():.3f}  max={vals.max():.3f}  within [0,1]: {in_range}  NaN count={df[c].isna().sum()}")
 
-dup_count = df["primary_publisher"].duplicated().sum()
+dup_count = df["publisher_primary"].duplicated().sum()
 print(f"\nduplicate publishers: {dup_count}")
 print(f"NaN overall_score count matches TASK 5 report: {df['overall_score'].isna().sum() == nan_overall.sum()}")
 
 # =============================================================================
 # SAVE
 # =============================================================================
-final_cols = ["rank", "primary_publisher", "game_count"] + DIMS + ["overall_score"]
+final_cols = ["rank", "publisher_primary", "game_count"] + DIMS + ["overall_score"]
 df[final_cols].to_csv(OUT, index=False)
 print(f"\nSaved: {OUT}  shape={df[final_cols].shape}")
 
@@ -1131,7 +1131,7 @@ This is important because a ranking can have a high overall Spearman correlation
 For every publisher calculate:
 
 ```text
-primary_publisher
+publisher_primary
 baseline_score
 baseline_rank
 min_score
@@ -1576,7 +1576,7 @@ quality_weight
 engagement_weight
 momentum_weight
 weight_distance_from_baseline
-primary_publisher
+publisher_primary
 overall_score
 rank
 baseline_rank
@@ -1599,7 +1599,7 @@ publisher_sensitivity_summary.csv
 Columns:
 
 ```text
-primary_publisher
+publisher_primary
 baseline_score
 baseline_rank
 min_score
@@ -1957,9 +1957,9 @@ from scipy.stats import spearmanr, pearsonr
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 # Paths are relative to src/feature_engineering/, as requested.
-INPUT_PATH = Path("../../data/feature_analysis/publisher_features.csv")
-BASELINE_REFERENCE_PATH = Path("../../data/feature_analysis/publisher_scores.csv")
-OUTPUT_DIR = Path("../../data/feature_analysis")
+INPUT_PATH = Path("data/feature_analysis/publisher_features.csv")
+BASELINE_REFERENCE_PATH = Path("data/feature_analysis/publisher_scores.csv")
+OUTPUT_DIR = Path("data/feature_analysis")
 PLOT_DIR = OUTPUT_DIR / "sensitivity_plots"
 
 BASELINE_WEIGHTS = {
@@ -1995,7 +1995,7 @@ MOMENTUM_SUBWEIGHTS = {
 }
 
 REQUIRED_FEATURE_COLUMNS = [
-    "primary_publisher",
+    "publisher_primary",
     "game_count",
     "review_score",
     "avg_owners_mid_norm",
@@ -2166,14 +2166,14 @@ missing_required = [c for c in REQUIRED_FEATURE_COLUMNS if c not in features.col
 if missing_required:
     raise ValueError(f"Missing required feature columns: {missing_required}")
 
-if features["primary_publisher"].duplicated().any():
+if features["publisher_primary"].duplicated().any():
     raise ValueError("publisher_features.csv contains duplicate publishers.")
 
 validate_no_inf(features, "publisher_features.csv")
 
 publisher_count = len(features)
 print(f"Publisher count: {publisher_count}")
-print(f"Duplicate publishers: {features['primary_publisher'].duplicated().sum()}")
+print(f"Duplicate publishers: {features['publisher_primary'].duplicated().sum()}")
 
 # =============================================================================
 # 4. INPUT VALIDATION
@@ -2181,7 +2181,7 @@ print(f"Duplicate publishers: {features['primary_publisher'].duplicated().sum()}
 print("\nInput validation")
 print("-" * 80)
 print("Required columns present: True")
-print(f"Unexpected duplicate publishers: {features['primary_publisher'].duplicated().sum()}")
+print(f"Unexpected duplicate publishers: {features['publisher_primary'].duplicated().sum()}")
 print(f"Any inf/-inf values: {np.isinf(features.select_dtypes(include=[np.number]).to_numpy()).any()}")
 
 missingness = (features.isna().mean() * 100).round(2)
@@ -2268,20 +2268,20 @@ if reference_exists:
     reference = pd.read_csv(BASELINE_REFERENCE_PATH, low_memory=False)
     print(f"Reference shape: {reference.shape}")
 
-    left_publishers = set(features["primary_publisher"])
-    right_publishers = set(reference["primary_publisher"])
+    left_publishers = set(features["publisher_primary"])
+    right_publishers = set(reference["publisher_primary"])
     validation["publisher_population_match"] = left_publishers == right_publishers
     print(f"Publisher populations match: {validation['publisher_population_match']}")
 
     merged = features[
-        ["primary_publisher", "scale_reach_score", "quality_score",
+        ["publisher_primary", "scale_reach_score", "quality_score",
          "engagement_score", "momentum_score", "overall_score", "rank"]
     ].merge(
         reference[
-            ["primary_publisher", "scale_reach_score", "quality_score",
+            ["publisher_primary", "scale_reach_score", "quality_score",
              "engagement_score", "momentum_score", "overall_score", "rank"]
         ],
-        on="primary_publisher",
+        on="publisher_primary",
         how="outer",
         suffixes=("_reconstructed", "_reference"),
         indicator=True,
@@ -2306,7 +2306,7 @@ if reference_exists:
             if mismatch_count:
                 validation["mismatching_publishers"][col] = merged.loc[
                     ~np.isclose(recon, ref, rtol=0.0, atol=1e-9, equal_nan=True),
-                    "primary_publisher",
+                    "publisher_primary",
                 ].tolist()
 
         rank_recon = merged["rank_reconstructed"].astype(float)
@@ -2399,7 +2399,7 @@ for _, scenario in scenarios.iterrows():
             "engagement_weight": scenario["engagement_weight"],
             "momentum_weight": scenario["momentum_weight"],
             "weight_distance_from_baseline": scenario["weight_distance_from_baseline"],
-            "primary_publisher": features["primary_publisher"],
+            "publisher_primary": features["publisher_primary"],
             "overall_score": scenario_score,
             "rank": scenario_rank,
         }
@@ -2408,8 +2408,8 @@ for _, scenario in scenarios.iterrows():
 
 scenario_results = pd.concat(scenario_rows, ignore_index=True)
 
-baseline_lookup = features.set_index("primary_publisher")
-scenario_results["baseline_rank"] = scenario_results["primary_publisher"].map(
+baseline_lookup = features.set_index("publisher_primary")
+scenario_results["baseline_rank"] = scenario_results["publisher_primary"].map(
     baseline_lookup["rank"]
 )
 scenario_results["rank_change"] = (
@@ -2426,7 +2426,7 @@ scenario_results = scenario_results[
         "engagement_weight",
         "momentum_weight",
         "weight_distance_from_baseline",
-        "primary_publisher",
+        "publisher_primary",
         "overall_score",
         "rank",
         "baseline_rank",
@@ -2445,7 +2445,7 @@ baseline_top = {}
 for n in TOP_N_VALUES:
     baseline_top[n] = set(
         features.loc[features["rank"].notna()]
-        .nsmallest(n, "rank")["primary_publisher"]
+        .nsmallest(n, "rank")["publisher_primary"]
     )
 
 scenario_summary_rows = []
@@ -2467,7 +2467,7 @@ for scenario_id, group in scenario_results.groupby("scenario_id", sort=False):
     for n in TOP_N_VALUES:
         scenario_top = set(
             group.dropna(subset=["rank"])
-            .nsmallest(n, "rank")["primary_publisher"]
+            .nsmallest(n, "rank")["publisher_primary"]
         )
         overlap[n] = len(baseline_top[n].intersection(scenario_top)) / n
 
@@ -2499,7 +2499,7 @@ print("-" * 80)
 valid_scenario_results = scenario_results.dropna(subset=["overall_score", "rank"]).copy()
 
 publisher_summary = (
-    valid_scenario_results.groupby("primary_publisher")
+    valid_scenario_results.groupby("publisher_primary")
     .agg(
         min_score=("overall_score", "min"),
         max_score=("overall_score", "max"),
@@ -2520,12 +2520,12 @@ publisher_summary["rank_range"] = (
 )
 
 baseline_info = features[
-    ["primary_publisher", "overall_score", "rank"]
+    ["publisher_primary", "overall_score", "rank"]
 ].rename(
     columns={"overall_score": "baseline_score", "rank": "baseline_rank"}
 )
 publisher_summary = baseline_info.merge(
-    publisher_summary, on="primary_publisher", how="left"
+    publisher_summary, on="publisher_primary", how="left"
 )
 
 for n in TOP_N_VALUES:
@@ -2533,17 +2533,17 @@ for n in TOP_N_VALUES:
         valid_scenario_results.assign(
             in_top_n=valid_scenario_results["rank"] <= n
         )
-        .groupby("primary_publisher")["in_top_n"]
+        .groupby("publisher_primary")["in_top_n"]
         .mean()
         .rename(f"top_{n}_frequency")
     )
     publisher_summary = publisher_summary.merge(
-        freq, on="primary_publisher", how="left"
+        freq, on="publisher_primary", how="left"
     )
 
 publisher_summary = publisher_summary[
     [
-        "primary_publisher",
+        "publisher_primary",
         "baseline_score",
         "baseline_rank",
         "min_score",
@@ -2559,7 +2559,7 @@ publisher_summary = publisher_summary[
         "top_10_frequency",
         "top_20_frequency",
     ]
-].sort_values(["baseline_rank", "primary_publisher"])
+].sort_values(["baseline_rank", "publisher_primary"])
 
 # =============================================================================
 # 11. DIMENSION-LEVEL SENSITIVITY
@@ -2627,22 +2627,22 @@ for label, weights in representative_definitions:
 
     base = pd.DataFrame(
         {
-            "primary_publisher": features["primary_publisher"],
+            "publisher_primary": features["publisher_primary"],
             "rank": rank,
             "score": score,
         }
     )
     available = base.merge(
-        features[["primary_publisher", "rank", "overall_score"]].rename(
+        features[["publisher_primary", "rank", "overall_score"]].rename(
             columns={"rank": "baseline_rank", "overall_score": "baseline_score"}
         ),
-        on="primary_publisher",
+        on="publisher_primary",
     ).dropna(subset=["rank", "baseline_rank"])
 
     top_overlaps = {}
     for n in TOP_N_VALUES:
         scenario_top = set(
-            base.dropna(subset=["rank"]).nsmallest(n, "rank")["primary_publisher"]
+            base.dropna(subset=["rank"]).nsmallest(n, "rank")["publisher_primary"]
         )
         top_overlaps[n] = len(baseline_top[n].intersection(scenario_top)) / n
 
@@ -2698,7 +2698,7 @@ for label, weights in representative_definitions:
     rank = rank_for_scores(score)
     top = pd.DataFrame(
         {
-            "primary_publisher": features["primary_publisher"],
+            "publisher_primary": features["publisher_primary"],
             "rank": rank,
         }
     ).dropna(subset=["rank"]).nsmallest(10, "rank")
@@ -2706,7 +2706,7 @@ for label, weights in representative_definitions:
         representative_top10.append(
             {
                 "scenario_label": label,
-                "primary_publisher": row["primary_publisher"],
+                "publisher_primary": row["publisher_primary"],
                 "rank": int(row["rank"]),
             }
         )
@@ -2810,7 +2810,7 @@ top10_freq = publisher_summary.sort_values(
     ["top_10_frequency", "baseline_rank"], ascending=[False, True]
 ).head(20).iloc[::-1]
 fig, ax = plt.subplots(figsize=(10, 8))
-ax.barh(top10_freq["primary_publisher"], top10_freq["top_10_frequency"])
+ax.barh(top10_freq["publisher_primary"], top10_freq["top_10_frequency"])
 ax.set_title("Publishers with the Highest Top-10 Frequency")
 ax.set_xlabel("Share of valid scenarios in Top 10")
 ax.set_ylabel("Publisher")
@@ -2822,11 +2822,11 @@ plt.close(fig)
 # Plot 6: Score sensitivity for baseline Top 10.
 baseline_top10_publishers = (
     features.loc[features["rank"].notna()]
-    .nsmallest(10, "rank")["primary_publisher"]
+    .nsmallest(10, "rank")["publisher_primary"]
     .tolist()
 )
 score_plot = publisher_summary[
-    publisher_summary["primary_publisher"].isin(baseline_top10_publishers)
+    publisher_summary["publisher_primary"].isin(baseline_top10_publishers)
 ].copy()
 score_plot = score_plot.sort_values("baseline_rank")
 fig, ax = plt.subplots(figsize=(11, 6))
@@ -2841,7 +2841,7 @@ ax.errorbar(
     capsize=5,
 )
 ax.set_xticks(x)
-ax.set_xticklabels(score_plot["primary_publisher"], rotation=45, ha="right")
+ax.set_xticklabels(score_plot["publisher_primary"], rotation=45, ha="right")
 ax.set_ylabel("Overall score")
 ax.set_title("Score Sensitivity for Baseline Top 10 Publishers")
 fig.tight_layout()
@@ -2851,7 +2851,7 @@ plt.close(fig)
 # Plot 7: Rank sensitivity heatmap for baseline Top 20 across representative scenarios.
 heatmap_publishers = (
     features.loc[features["rank"].notna()]
-    .nsmallest(20, "rank")["primary_publisher"]
+    .nsmallest(20, "rank")["publisher_primary"]
     .tolist()
 )
 heat = pd.DataFrame(index=heatmap_publishers)
@@ -2874,10 +2874,10 @@ for label, weights in representative_definitions:
         .where(complete, np.nan)
     )
     rank = rank_for_scores(score)
-    heat[label] = features["primary_publisher"].map(
-        pd.Series(rank.to_numpy(), index=features["primary_publisher"])
+    heat[label] = features["publisher_primary"].map(
+        pd.Series(rank.to_numpy(), index=features["publisher_primary"])
     )
-heat["Baseline"] = features.set_index("primary_publisher").loc[
+heat["Baseline"] = features.set_index("publisher_primary").loc[
     heat.index, "rank"
 ]
 heat = heat[["Baseline", "SCALE_REACH", "QUALITY", "ENGAGEMENT", "MOMENTUM"]]
@@ -2970,7 +2970,7 @@ assert np.isclose(
 expected_rows = valid_count * publisher_count
 assert len(scenario_results) == expected_rows
 assert not scenario_results.duplicated(
-    ["scenario_id", "primary_publisher"]
+    ["scenario_id", "publisher_primary"]
 ).any()
 
 # Score range.
@@ -2996,7 +2996,7 @@ validate_no_inf(dimension_summary, "dimension_sensitivity_summary")
 
 print(f"Scenario observations: {len(scenario_results):,}")
 print(f"Expected observations: {expected_rows:,}")
-print(f"Publisher/scenario duplicates: {scenario_results.duplicated(['scenario_id', 'primary_publisher']).sum()}")
+print(f"Publisher/scenario duplicates: {scenario_results.duplicated(['scenario_id', 'publisher_primary']).sum()}")
 print(f"Scenario score values within [0,1]: {non_nan_scores.between(0,1).all()}")
 print(f"Publishers with missing overall score in every scenario: {features['overall_score'].isna().sum()}")
 
@@ -3018,7 +3018,7 @@ print("\nBaseline Top 10:")
 print(
     features.loc[features["rank"].notna()]
     .nsmallest(10, "rank")[
-        ["primary_publisher", "overall_score", "rank",
+        ["publisher_primary", "overall_score", "rank",
          "scale_reach_score", "quality_score", "engagement_score", "momentum_score"]
     ]
     .to_string(index=False)
@@ -3036,7 +3036,7 @@ largest = scenario_results.dropna(subset=["absolute_rank_change"]).nlargest(
 print("\nLargest observed rank movements:")
 print(
     largest[
-        ["scenario_id", "primary_publisher", "baseline_rank", "rank",
+        ["scenario_id", "publisher_primary", "baseline_rank", "rank",
          "rank_change", "absolute_rank_change"]
     ].to_string(index=False)
 )
@@ -3055,7 +3055,7 @@ print(
     publisher_summary[
         publisher_summary["baseline_rank"] <= 10
     ].sort_values(["rank_range", "mean_absolute_rank_change"])[
-        ["primary_publisher", "baseline_rank", "rank_range",
+        ["publisher_primary", "baseline_rank", "rank_range",
          "score_range", "mean_absolute_rank_change", "top_10_frequency"]
     ].to_string(index=False)
 )
@@ -3066,7 +3066,7 @@ print(
         ["rank_range", "mean_absolute_rank_change"],
         ascending=[False, False],
     ).head(10)[
-        ["primary_publisher", "baseline_rank", "rank_range",
+        ["publisher_primary", "baseline_rank", "rank_range",
          "score_range", "mean_absolute_rank_change", "top_10_frequency"]
     ].to_string(index=False)
 )
@@ -3080,7 +3080,7 @@ print(representative_summary.to_string(index=False))
 print("\nRepresentative scenario Top 10:")
 print(
     representative_top10.pivot(
-        index="primary_publisher", columns="scenario_label", values="rank"
+        index="publisher_primary", columns="scenario_label", values="rank"
     ).sort_index().to_string()
 )
 
