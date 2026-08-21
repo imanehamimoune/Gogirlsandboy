@@ -201,13 +201,9 @@ Verify that the completed pipeline satisfies the following conditions:
 # Author: Imane Hamimoune (prompt and adjustments), ChatGPT (code)
 
 from __future__ import annotations
- 
 import re
- 
 import numpy as np
 import pandas as pd
- 
-
  
 RAW_DTYPES = {"app_id": "int64"}
  
@@ -229,11 +225,8 @@ LEGAL_SUFFIX = (
 # Descriptive words. Stripped once only -- stripping repeatedly would turn
 # "Game Science" into "science".
 DESCRIPTIVE_SUFFIX = r",?\s+(studios?|games?|interactive|entertainment|publishing|productions?|media|digital|software)\.?$"
- 
- 
 
- 
- 
+
 def load_raw(path: str) -> pd.DataFrame:
     """Read the raw export with the two MySQL quirks handled."""
     return pd.read_csv(
@@ -243,10 +236,8 @@ def load_raw(path: str) -> pd.DataFrame:
         keep_default_na=True,
         dtype=RAW_DTYPES,
     )
- 
- 
- 
- 
+
+
 def _normalise_company(s: pd.Series) -> pd.Series:
     """Whitespace/casing/legal-suffix normalisation for grouping only.
  
@@ -267,7 +258,6 @@ def _normalise_company(s: pd.Series) -> pd.Series:
         out = stripped
     out = out.str.replace(DESCRIPTIVE_SUFFIX, "", regex=True).str.strip(" .,-")
     return out.replace("", pd.NA)
- 
  
  
 # Fragments that are a legal suffix rather than a separate company. Used to
@@ -465,9 +455,11 @@ def clean_steamspy(path: str) -> tuple[pd.DataFrame, dict]:
 if __name__ == "__main__":
     import sys
  
-    src = sys.argv[1] if len(sys.argv) > 1 else "data/raw/steamspy_insights.csv"
+    src = sys.argv[1] if len(sys.argv) > 1 else "data/raw/steamspy_insights.zip"
     frame, rep = clean_steamspy(src)
     for k, v in rep.items():
         print(f"{k:<28} {v}")
     print()
     print(frame.dtypes)
+
+    frame.to_csv("data/processed/steamspy_insights_cleaned.csv", index=False)
