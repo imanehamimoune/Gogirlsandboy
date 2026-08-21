@@ -1,5 +1,204 @@
-#will make some changes later today 
+"""
+## Role
 
+You are a data analyst working with Python, pandas, and NumPy. Your task is to clean and standardize a raw SteamSpy dataset while preserving useful information and creating analysis-ready features.
+
+## Context
+
+The input is a raw SteamSpy CSV export containing information about Steam applications, including:
+
+* `app_id`
+* developer and publisher information
+* ownership ranges
+* current and initial prices
+* discount information
+* concurrent-user counts
+* playtime statistics
+* languages
+* genres
+
+The raw data contains several quality and consistency issues. Company names may contain inconsistent whitespace, capitalization, legal suffixes, descriptive suffixes, or multiple companies in one field. Ownership information is stored as textual ranges. Prices are stored in cents. Some numeric values may be invalid or missing, and some columns may contain no useful information.
+
+The cleaned dataset should preserve one row per application while generating additional variables that can be used for grouping, analysis, and modelling.
+
+## Objective
+
+Create a Python data-cleaning pipeline that loads the raw SteamSpy dataset, standardizes important fields, resolves duplicate application IDs, engineers useful analytical features, identifies questionable values, and produces a report documenting the transformations performed.
+
+The main cleaning function should return both the cleaned DataFrame and a dictionary containing data-quality and transformation statistics.
+
+## Tasks
+
+1. **Load the raw data**
+
+   * Read the CSV file using pandas.
+   * Handle escaped characters correctly.
+   * Interpret `"N"` and empty strings as missing values.
+   * Ensure `app_id` is loaded as an integer.
+
+2. **Ensure application ID integrity**
+
+   * Detect duplicated `app_id` values.
+   * Keep the first occurrence of each duplicated application.
+   * Record the number of removed duplicates.
+   * Temporarily use `app_id` as the index and sort the dataset by it.
+
+3. **Clean developer and publisher information**
+
+   * Normalize whitespace in `developer` and `publisher`.
+   * Convert empty strings to missing values.
+   * Preserve the cleaned original company names for display.
+   * Extract the primary company when multiple companies are listed.
+   * Correctly handle commas that belong to legal company suffixes rather than treating them as company separators.
+   * Count how many companies are listed in each field.
+   * Create normalized company keys for grouping and matching.
+   * Normalize casing and repeatedly remove legal suffixes such as `Inc`, `Ltd`, `LLC`, `GmbH`, and similar forms.
+   * Remove one descriptive suffix such as `Games`, `Studios`, `Interactive`, `Entertainment`, or `Software`.
+   * Record missing and multi-company values.
+   * Compare normalized developer and publisher keys to create a `self_published` indicator.
+
+4. **Parse ownership ranges**
+
+   * Convert textual ranges such as `"20,000 .. 50,000"` into numeric lower and upper bounds.
+   * Calculate the midpoint of each ownership range.
+   * Create a log-transformed ownership midpoint using `log1p`.
+   * Create an ordered categorical ownership bucket based on the numeric lower bounds.
+   * Record how many ownership ranges could not be parsed.
+
+5. **Process prices and discounts**
+
+   * Convert `price` and `initial_price` from cents to euros.
+   * Convert the reported discount to a numeric percentage.
+   * Identify free applications.
+   * Detect cases where the current price exceeds the initial price.
+   * Create a flag for these inconsistent prices.
+   * Calculate the implied discount percentage from current and initial prices.
+   * Flag unusually high initial prices above €200 as potential outliers.
+   * Record the number of missing prices and inconsistent price records.
+
+6. **Process usage and playtime fields**
+
+   * Convert `concurrent_users_yesterday` to a nullable integer.
+   * Replace negative concurrent-user values with missing values.
+   * Record how many applications have non-zero concurrent users.
+   * Check the predefined playtime columns.
+   * Drop playtime columns if all their values are effectively zero.
+   * Record which uninformative columns were removed.
+
+7. **Create compact language and genre features**
+
+   * Count the number of comma-separated languages listed for each application.
+   * Count the number of comma-separated genres.
+   * Store these as nullable integer features.
+
+8. **Create a derived business metric**
+
+   * Estimate gross revenue using:
+
+     `owners_mid × price_eur`
+
+   * Store the result as `est_revenue_eur`.
+
+   * Treat this strictly as a proxy rather than actual revenue.
+
+9. **Create a completeness indicator**
+
+   * Create an `is_investable` flag.
+   * Mark a row as investable only when publisher, price, and ownership midpoint information are available.
+   * Record the number of investable rows.
+
+10. **Produce a cleaning report**
+
+    * Maintain a dictionary containing important processing statistics, including:
+
+      * input row count
+      * duplicate application IDs removed
+      * missing developer and publisher counts
+      * multi-company developer and publisher counts
+      * unique raw and normalized publisher counts
+      * unparsed ownership ranges
+      * missing prices
+      * inconsistent prices
+      * non-zero concurrent-user counts
+      * dropped uninformative columns
+      * investable rows
+      * output row count
+
+11. **Return the results**
+
+    * Reset the DataFrame index.
+    * Return the cleaned DataFrame and the report dictionary.
+    * When the script is executed directly, print the report and the resulting column data types.
+
+## Constraints
+
+* Use Python with `pandas`, `numpy`, and `re`.
+* Keep `app_id` as the unique identifier.
+* Do not drop rows because individual analytical fields are missing.
+* Only duplicate `app_id` records may be removed.
+* Preserve readable developer and publisher names separately from normalized grouping keys.
+* Company-name normalization must be used for matching and grouping, not as a replacement for the display values.
+* Legal suffix removal must account for stacked suffixes.
+* Do not incorrectly split legal names such as `"CINEMAX, s.r.o."` into separate companies.
+* Use pandas nullable data types where appropriate.
+* Invalid numeric values should be converted to missing values rather than causing the pipeline to fail.
+* Only drop playtime columns when they contain no useful variation.
+* Do not present `est_revenue_eur` as true revenue because ownership ranges are approximate and the calculation ignores factors such as regional pricing, refunds, platform fees, bundles, and free-to-play monetization.
+* Keep the implementation modular by using helper functions for repeated or logically separate transformations.
+
+## Expected Output
+
+Provide a complete Python script containing:
+
+* required imports
+* configuration constants
+* a raw-data loading function
+* company-name normalization helpers
+* company extraction and counting helpers
+* an ownership-range parsing helper
+* a cents-to-euros conversion helper
+* a comma-separated item-count helper
+* a main `clean_steamspy(path)` function
+* a script entry point for running the pipeline directly
+
+The `clean_steamspy(path)` function should return:
+
+```python
+cleaned_df, report
+```
+
+where:
+
+* `cleaned_df` is the cleaned and feature-engineered SteamSpy DataFrame.
+* `report` is a dictionary summarizing the major cleaning operations and data-quality findings.
+
+## Validation
+
+Verify that the completed pipeline satisfies the following conditions:
+
+1. `app_id` is unique in the final DataFrame.
+2. Duplicate `app_id` records are counted before removal.
+3. Missing values are handled without unintentionally dropping rows.
+4. Empty developer and publisher strings are converted to missing values.
+5. Original readable company names remain available after normalization.
+6. Legal company suffixes do not create false multi-company records.
+7. Normalized company keys consistently handle casing, whitespace, and company suffixes.
+8. The `self_published` flag is only true when both normalized company keys exist and match.
+9. Ownership ranges are correctly converted into lower, upper, midpoint, log-midpoint, and ordered bucket features.
+10. Prices are correctly converted from cents to euros.
+11. Free applications are correctly identified.
+12. Current prices greater than initial prices are flagged.
+13. Implied discount percentages are calculated only when the initial price is greater than zero.
+14. Negative concurrent-user values are converted to missing values.
+15. Playtime columns are removed only when they contain no meaningful information.
+16. Language and genre counts are missing-value safe.
+17. The estimated revenue feature uses ownership midpoint multiplied by current price.
+18. `is_investable` requires publisher, price, and ownership information.
+19. The report accurately reflects the transformations performed.
+20. The final output contains one row per unique `app_id` and returns both the cleaned DataFrame and the report dictionary.
+"""
+# Request: 2026-08-19 18:18 CET.
+# Author: Imane Hamimoune (prompt and adjustments), ChatGPT (code)
 
 from __future__ import annotations
  
