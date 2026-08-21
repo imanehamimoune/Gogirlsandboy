@@ -1,103 +1,125 @@
-# ---------------------------------------------------------------------------
-# Build features on publisher level from game-level data
-# ---------------------------------------------------------------------------
+''' PART 1: BUILDING PUBLISHER FEATURES '''
+
+'''
+Role: You are a senior Data Engineer and Analyst with strong Python/Pandas expertise, building a publisher-level feature table from game-level data. Prioritize correct, well-justified aggregation and normalization over cleverness.
+Context: Input is master_dataset.csv — one row per app_id, already merged and cleaned. The next step is to aggregate this to one row per primary_publisher, producing a small set of features usable for ranking/scoring publishers. Some of these features are already naturally bounded ratios; others are raw counts/rates that need normalization before they can be compared or combined meaningfully.
+
+Objective: Produce publisher_features.csv — one row per primary_publisher — containing exactly the 8 features below, with publishers below a minimum game count excluded, and the appropriate features normalized. Do not touch master_dataset.csv itself.
+Scope decision to state explicitly (in a code comment) before proceeding:
+* Propose and justify a normalization scale (log transform, min-max, or an alternative such as percentile rank) for each feature that needs one, based on that feature's own distribution — not assumed. Compute skew (or another shape diagnostic) on the actual aggregated data to justify the choice, rather than picking a method up front and hoping it fits.
+Features (all aggregated per publisher):
+1. review_score — mean of review_score (0-9 scale), EXCLUDING 0 values from the average. A 0 signals "too few reviews to compute a score," not an actually bad score — including it would wrongly drag a publisher's average down for being under-reviewed, not disliked.
+2. owner_mid count — mean of owners_mid per publisher (reach per game).
+3. language_count — mean of language_count per publisher (localization reach).
+4. positive review ratio — mean of positive / (positive + negative) per game. Already bounded 0-1. Games with zero total reviews are NaN and excluded from the mean, not treated as 0% positive.
+5. active users rate — mean of concurrent_users_yesterday / owners_mid per game. Conceptually a 0-1 ratio, but verify this empirically rather than assuming it — guard against division by zero (owners_mid == 0 -> NaN, not 0 or inf).
+6. recent release count — count of games released within a defined "recent" window (e.g. within 2 years of the dataset's own max release_date, used as a fixed reference "today" rather than the real current date, since the data is a fixed snapshot).
+7. recent release ratio — recent_release_count / game_count. Already bounded 0-1.
+8. game_count — count of games per publisher (portfolio size).
+
+Tasks:
+1. Load master_dataset.csv and report its shape.
+2. Per-game prep (before aggregating):
+    * Compute positive_review_ratio and active_users_rate per game, guarding every division against a zero denominator (-> NaN, never 0 or inf).
+    * Parse release_date; compute is_recent per game against the reference "today" described above.
+    * Replace review_score == 0 with NaN for averaging purposes only (do not alter the underlying review_score column's meaning elsewhere).
+    * Report how many rows have a missing primary_publisher (these can't be aggregated — exclude them from this table, don't guess a publisher).
+3. Aggregate to publisher level using the 8 feature definitions above.
+4. Drop publishers with game_count < 10. Report publisher count before and after this filter.
+5. Normalize the count/rate features (owner_mid count, language_count, game_count, recent_release_count, active_users_rate) using the scale proposed and justified in the scope decision above, writing results to NEW columns (e.g. <feature>_norm) — never overwrite the original. Leave review_score, positive_review_ratio, and recent_release_ratio unnormalized, since they're already bounded and directly interpretable.
+6. Execute and validate:
+    * Actually run the code.
+    * Confirm: one row per publisher, no duplicate publishers, no inf/-inf values anywhere (check explicitly), and report missing % per column.
+7. Deliver:
+    * The code, plus a short summary: publisher count before/after the game_count filter, the normalization method chosen per feature (with the diagnostic that justified it), and which columns have the most missingness and why.
+
+Constraints (Do Not):
+* Do not drop any game-level row for reasons other than missing primary_publisher (which can't be aggregated at all).
+* Do not fill a NaN ratio/average with 0 — a 0 has a different meaning (e.g. "no reviews at all") than "not enough data to compute."
+* Do not silently let divide-by-zero produce inf — guard explicitly.
+* Do not normalize review_score, positive_review_ratio, or recent_release_ratio — they're already bounded and interpretable as-is.
+* Do not pick a normalization method without first checking the actual distribution of that feature on this data.
+* Do not overengineer — no scaling/encoding beyond what's needed for the 5 count/rate features, no speculative extra features.
+
+Expected Output:
+* publisher_features.csv: one row per primary_publisher (game_count >= 10 only), containing the 8 requested features plus normalized (_norm) versions of owner_mid count, language_count, game_count, recent_release_count, and active_users_rate.
+* A short written summary covering: publisher counts before/after filtering, the normalization method and justification per feature, and notable missingness patterns.
+
+Validation:
+* Reload the output and confirm: no duplicate publishers, all publishers have game_count >= 10, no inf/-inf values anywhere, and normalized columns fall within their expected range (e.g. [0,1] for min-max-based methods).
+
+'''
+# Request: 2026-08-20 19:50 CET.
+# Author: Anna Andruszkiewicz (prompt and adjustments), Claude (code)
+
+
 """
 Build publisher_features.csv from master_dataset.csv: one row per
 primary_publisher, aggregating game-level data into 8 features. Publishers
-with fewer than MIN_GAMES titles are dropped (too few games for a
-publisher-level average to be meaningful/stable).
+with fewer than MIN_GAMES titles are dropped.
 
-Features (all aggregated per publisher):
-  - review_score            : mean of review_score (0-9), EXCLUDING 0 --
-                               0 signals "too few reviews to score", not an
-                               actually bad score, so including it would
-                               wrongly drag the average down for a publisher
-                               that's simply under-reviewed, not disliked.
-  - avg_owners_mid           : mean of owners_mid (reach per game)
-  - avg_language_count       : mean of language_count (localization reach)
-  - avg_positive_review_ratio: mean of positive/(positive+negative) per game
-                               (already 0-1, games with zero reviews at all
-                               are NaN and excluded from the mean, not
-                               treated as 0% positive)
-  - avg_active_users_rate    : mean of concurrent_users_yesterday/owners_mid
-                               per game (already conceptually 0-1, but see
-                               normalization note below -- it isn't reliably
-                               bounded in this data)
-  - recent_release_count     : count of games released within RECENT_YEARS
-                               of the dataset's own max release_date
-  - recent_release_ratio     : recent_release_count / game_count (0-1)
-  - game_count               : portfolio size (games per publisher)
-    - avg_price                : mean of price_final_clean (EUR) per game,
-                                LEFT UNNORMALIZED on purpose -- not a
-                                dimension score, but a raw input for a
-                                downstream revenue estimate (e.g.
-                                avg_owners_mid * avg_price), which needs
-                                real EUR units, not a scaled 0-1 value.
-                                Free games correctly contribute 0; games
-                                with unverified/non-EUR pricing are NaN
-                                and excluded from the mean, not guessed at.
-
-Normalization (proposed and applied):
-  - avg_owners_mid, avg_language_count, game_count, recent_release_count
-      -> log1p + min-max. These are count/count-derived aggregates and are
-         heavily right-skewed (a few large publishers, many small ones);
-         log1p compresses the tail before scaling to [0,1]. Method choice
-         is confirmed by computed skew on THIS aggregated data (>2 -> log),
-         not assumed.
-  - avg_active_users_rate
-      -> percentile rank, not log+min-max. This ratio is not reliably
-         bounded in the source data -- a handful of games have
-         steamspy-bucket-mismatched owners_mid producing rates that even
-         log1p doesn't tame, which would crush every other publisher
-         toward 0 after min-max. Percentile rank is immune to how extreme
-         an outlier is.
-  - review_score (0-9), avg_positive_review_ratio, recent_release_ratio
-      -> left as-is. Already bounded and directly interpretable; scaling
-         them further would only obscure the original scale for no
-         analytical benefit.
+Structured to follow the task numbering in the source prompt (Tasks 1-7)
+so each section below maps directly back to it.
 """
-import zipfile
+
 import numpy as np
 import pandas as pd
 
 pd.set_option("display.width", 140)
 
-SRC = "data/processed/master_dataset.zip"
-OUT = "data/processed/publisher_features.csv"
+SRC = "./master_dataset.csv"
+OUT = "./publisher_features.csv"
 MIN_GAMES = 10
 RECENT_YEARS = 2
 
-with zipfile.ZipFile(SRC) as z:
-    with z.open("master_dataset.csv") as f:
-        df = pd.read_csv(f, low_memory=False)
-
+# =============================================================================
+# TASK 1: LOAD
+# =============================================================================
+df = pd.read_csv(SRC, low_memory=False)
+print("=" * 70)
+print("TASK 1: LOAD")
+print("=" * 70)
 print("Loaded master_dataset.csv:", df.shape)
 
-# ---------------------------------------------------------------------------
-# PER-GAME PREP (before aggregating)
-# ---------------------------------------------------------------------------
+# =============================================================================
+# TASK 2: PER-GAME PREP (before aggregating)
+# =============================================================================
+print("\n" + "=" * 70)
+print("TASK 2: PER-GAME PREP")
+print("=" * 70)
+
+# positive_review_ratio and active_users_rate -- guard every division
+# against a zero denominator (-> NaN, never 0 or inf)
 review_denom = df["positive"] + df["negative"]
 df["review_positive_ratio"] = np.where(review_denom > 0, df["positive"] / review_denom, np.nan)
 df["active_users_rate"] = np.where(df["owners_mid"] > 0, df["concurrent_users_yesterday"] / df["owners_mid"], np.nan)
+print("Computed review_positive_ratio and active_users_rate (both NaN-guarded against division by zero).")
 
+# parse release_date; compute is_recent against a fixed reference "today"
+# (the dataset's own max release_date, not the real current date, since
+# this is a fixed snapshot)
 df["release_date_parsed"] = pd.to_datetime(df["release_date"], errors="coerce")
 reference_today = df["release_date_parsed"].max()
 df["is_recent"] = (reference_today - df["release_date_parsed"]).dt.days / 365.25 <= RECENT_YEARS
 print(f"Reference 'today' (max release_date in data): {reference_today.date()}")
 
-# review_score: 0 means "too few reviews to compute a score", not "bad" --
-# treat as missing for averaging purposes, not as a real 0.
+# review_score == 0 means "too few reviews to compute a score", not "bad" --
+# treat as missing FOR AVERAGING PURPOSES ONLY. The underlying review_score
+# column itself is left untouched elsewhere.
 df["review_score_for_avg"] = df["review_score"].replace(0, np.nan)
+print("review_score == 0 replaced with NaN in a separate averaging column (original review_score untouched).")
 
 # rows with no primary_publisher can't be aggregated -- report, don't guess
 missing_pub = df["primary_publisher"].isna().sum()
 print(f"Rows with missing primary_publisher (excluded from aggregation): {missing_pub} ({missing_pub/len(df)*100:.1f}%)")
 
-df["est_revenue_per_game"] = df["owners_mid"] * df["price_final_clean"]
+# =============================================================================
+# TASK 3: AGGREGATE TO PUBLISHER LEVEL
+# =============================================================================
+print("\n" + "=" * 70)
+print("TASK 3: AGGREGATE TO PUBLISHER LEVEL")
+print("=" * 70)
 
-# ---------------------------------------------------------------------------
-# AGGREGATE TO PUBLISHER LEVEL
-# ---------------------------------------------------------------------------
 grouped = df.groupby("primary_publisher")
 publisher_features = grouped.agg(
     game_count=("app_id", "count"),
@@ -107,31 +129,53 @@ publisher_features = grouped.agg(
     avg_positive_review_ratio=("review_positive_ratio", "mean"),
     avg_active_users_rate=("active_users_rate", "mean"),
     recent_release_count=("is_recent", "sum"),
-    avg_price=("price_final_clean", "mean"),
-    total_est_revenue=("est_revenue_per_game", "sum"),    
-    avg_est_revenue_per_game=("est_revenue_per_game", "mean"),
-    max_single_game_revenue=("est_revenue_per_game", "max"),  
 ).reset_index()
-
-
 
 publisher_features["recent_release_ratio"] = (
     publisher_features["recent_release_count"] / publisher_features["game_count"]
 )
+print(f"Aggregated to {len(publisher_features)} publishers, 8 features computed.")
 
-print(f"\nPublishers before game_count filter: {len(publisher_features)}")
+# =============================================================================
+# TASK 4: DROP PUBLISHERS WITH game_count < MIN_GAMES
+# =============================================================================
+print("\n" + "=" * 70)
+print(f"TASK 4: FILTER (game_count >= {MIN_GAMES})")
+print("=" * 70)
+n_before = len(publisher_features)
 publisher_features = publisher_features[publisher_features["game_count"] >= MIN_GAMES].copy()
-print(f"Publishers with game_count >= {MIN_GAMES}: {len(publisher_features)}")
+n_after = len(publisher_features)
+print(f"Publishers before filter: {n_before}")
+print(f"Publishers after filter (game_count >= {MIN_GAMES}): {n_after}")
 
-# ---------------------------------------------------------------------------
-# NORMALIZATION (method chosen per feature, justified above; skew computed
-# live on this aggregated/filtered data, not assumed)
-# ---------------------------------------------------------------------------
+# =============================================================================
+# TASK 5: NORMALIZATION
+# =============================================================================
+# Scope decision (stated per the prompt): normalization method per feature
+# is chosen from that feature's own computed skew on THIS aggregated data,
+# not assumed up front.
+#   - avg_owners_mid, avg_language_count, game_count, recent_release_count:
+#     count/count-derived aggregates. If |skew| > 2 -> log1p + min-max
+#     (compresses a heavy right tail before scaling to [0,1]); otherwise
+#     plain min-max.
+#   - avg_active_users_rate: conceptually a 0-1 ratio, but NOT reliably
+#     bounded in this data -- a handful of games have steamspy-bucket-
+#     mismatched owners_mid producing rates so extreme that even log1p
+#     doesn't tame them, which would crush every other publisher toward 0
+#     after min-max. Percentile rank is used instead: it only depends on
+#     relative order, so it's immune to how extreme an outlier is.
+#   - review_score (0-9), avg_positive_review_ratio, recent_release_ratio:
+#     left unnormalized -- already bounded and directly interpretable;
+#     scaling them further would only obscure the original scale.
+print("\n" + "=" * 70)
+print("TASK 5: NORMALIZATION")
+print("=" * 70)
+
 SKEW_THRESHOLD = 2.0
 log_minmax_candidates = ["avg_owners_mid", "avg_language_count", "game_count", "recent_release_count"]
 rank_scaled = ["avg_active_users_rate"]
 
-print("\nNormalization applied:")
+normalization_log = {}
 for col in log_minmax_candidates:
     col_skew = publisher_features[col].skew()
     if abs(col_skew) > SKEW_THRESHOLD:
@@ -142,91 +186,151 @@ for col in log_minmax_candidates:
         method = "min-max"
     col_min, col_max = transformed.min(), transformed.max()
     publisher_features[col + "_norm"] = (transformed - col_min) / (col_max - col_min)
+    normalization_log[col] = (col_skew, method)
     print(f"  {col:24s} skew={col_skew:7.2f}  method={method}")
 
 for col in rank_scaled:
     publisher_features[col + "_norm"] = publisher_features[col].rank(pct=True)
-    print(f"  {col:24s}              method=percentile rank")
+    normalization_log[col] = (None, "percentile rank")
+    print(f"  {col:24s}              method=percentile rank (bounded/unreliable-outlier ratio)")
 
 print("\nLeft unnormalized (already bounded/interpretable): review_score (0-9), "
       "avg_positive_review_ratio (0-1), recent_release_ratio (0-1)")
 
-# ---------------------------------------------------------------------------
-# VALIDATE
-# ---------------------------------------------------------------------------
+# =============================================================================
+# TASK 6: EXECUTE AND VALIDATE
+# =============================================================================
 print("\n" + "=" * 70)
-print("VALIDATION")
+print("TASK 6: EXECUTE AND VALIDATE")
 print("=" * 70)
 print("shape:", publisher_features.shape)
-print("duplicate publishers:", publisher_features["primary_publisher"].duplicated().sum())
+print("one row per publisher (no duplicates):", publisher_features["primary_publisher"].duplicated().sum() == 0)
+print("all publishers meet game_count >= MIN_GAMES:", (publisher_features["game_count"] >= MIN_GAMES).all())
+
 inf_check = np.isinf(publisher_features.select_dtypes(include=[np.number])).sum()
-print("columns with inf/-inf:", inf_check[inf_check > 0].to_dict() or "none")
+inf_cols = inf_check[inf_check > 0]
+print("columns with inf/-inf values:", inf_cols.to_dict() if len(inf_cols) else "none")
+
+norm_cols = [c for c in publisher_features.columns if c.endswith("_norm")]
+in_range = publisher_features[norm_cols].apply(lambda s: s.dropna().between(0, 1).all())
+print("all *_norm columns fall within [0,1]:", in_range.all())
+
 print("\nmissing % per column:")
-print((publisher_features.isna().mean() * 100).round(2).to_string())
+missingness = (publisher_features.isna().mean() * 100).round(2)
+print(missingness.to_string())
 
-print("\nTop 10 by review_score (min 10 games, 0s excluded from average):")
-print(publisher_features.nlargest(10, "review_score")[["primary_publisher", "game_count", "review_score"]].to_string(index=False))
-
-# ---------------------------------------------------------------------------
-# SAVE
-# ---------------------------------------------------------------------------
 publisher_features.to_csv(OUT, index=False)
 print(f"\nSaved: {OUT}  shape={publisher_features.shape}")
 
+# =============================================================================
+# TASK 7: DELIVER (short summary)
+# =============================================================================
+print("\n" + "=" * 70)
+print("TASK 7: SUMMARY")
+print("=" * 70)
+print(f"Publishers: {n_before} before filter -> {n_after} after game_count >= {MIN_GAMES} filter.")
+print(f"Rows excluded upstream for missing primary_publisher: {missing_pub} ({missing_pub/len(df)*100:.1f}% of games).")
+print("\nNormalization method per feature (skew computed on this aggregated data):")
+for col, (skew_val, method) in normalization_log.items():
+    skew_str = f"skew={skew_val:.2f}" if skew_val is not None else "outlier-driven, not skew-based"
+    print(f"  {col:24s} -> {method:20s} ({skew_str})")
+print("\nColumns with the most missingness:")
+print(missingness[missingness > 0].sort_values(ascending=False).to_string() or "  none")
+print("\nTop 10 publishers by review_score (min 10 games, 0s excluded from average):")
+print(publisher_features.nlargest(10, "review_score")[["primary_publisher", "game_count", "review_score"]].to_string(index=False))
 
-# ---------------------------------------------------------------------------
-# Score and rank publishers from publisher_features.csv using 4 weighted dimensions
-# ---------------------------------------------------------------------------
+
+
+
+''' PART 2: EVALUATING PUBLISHER SCORES '''
+'''
+Role: You are a senior Data Engineer and Analyst with strong Python/Pandas expertise, building a weighted scoring and ranking layer on top of an existing publisher-level feature table. Prioritize transparency and easy adjustability of every weight/assumption over cleverness.
+Context: Input is publisher_features.csv — one row per primary_publisher, already aggregated and normalized (contains raw features like review_score, avg_owners_mid, avg_language_count, avg_positive_review_ratio, avg_active_users_rate, recent_release_ratio, game_count, recent_release_count, plus their _norm counterparts where applicable). The next step is to combine these into 4 weighted dimension scores and one overall weighted score, then rank publishers by it.
+
+Objective: Produce publisher_scores.csv — one row per publisher — containing the 4 dimension scores, the overall weighted score, and a rank. Do not touch publisher_features.csv itself.
+Weighting scheme (as specified): Scale & Reach (35%) = 80% player count (reach) + 20% language count Quality (30%) = 50/50 split of review score and positive review ratio Engagement (20%) = no sub-weights specified Growth & Momentum (15%) = 60% ratio + 40% games count
+Scope decisions to make explicit up front (state each as a code comment, collected in one clearly-labeled, easily-editable place — not buried in calculation logic):
+* "Player count" and "language count" map to avg_owners_mid_norm and avg_language_count_norm respectively (the already-normalized reach features from publisher_features.csv).
+* Quality has  a 50/50 blend sub-split of review_score (0-9) and avg_positive_review_ratio (0-1, already bounded). Before, min-max scale the review_score to 0-1 (only for this blend — do not alter or re-save review_score itself elsewhere). Make the blend weights a named, editable variable.
+* Engagement has only one available signal (avg_active_users_rate_norm) -- no sub-split needed.
+* "Ratio" in Growth & Momentum maps to recent_release_ratio (already bounded 0-1, matches the name directly).
+* "Games count" in Growth & Momentum is recent_release_count_norm (recent releases only). 
+
+Tasks:
+1. Load publisher_features.csv and report its shape.
+2. Collect every weight (the 4 dimension weights, and the sub-weights within Scale & Reach, Quality, and Growth & Momentum) into named dictionaries/variables at the top of the script, each asserted to sum to 1.0. No weight value should appear inline inside a calculation.
+3. Min-max scale review_score (0-9) to 0-1 in a new column, since it must be combined with avg_positive_review_ratio (already 0-1) into the Quality dimension — document that publisher_features.csv intentionally left review_score unnormalized, and this rescale exists only for this combination step.
+4. Compute the 4 dimension scores using the weighted sums defined above.
+5. Compute overall_score as the weighted sum of the 4 dimension scores using the top-level weights. If any dimension score is NaN for a publisher, overall_score must also be NaN for that publisher (no silent reweighting or fabrication) — report these publishers separately rather than dropping them.
+6. Rank publishers by overall_score (descending; ties get the same rank, e.g. via "min" ranking method). Sort the output by rank.
+7. Execute and validate:
+    * Actually run the code.
+    * Confirm: all 4 dimension scores and overall_score fall within [0,1] (where non-NaN), no duplicate publishers, and report how many publishers have a NaN overall_score and why.
+8. Deliver:
+    * The code, plus a short summary: top 10-15 publishers by overall_score with their dimension breakdown.
+
+Constraints (Do Not):
+* Do not hardcode any weight inline in a formula — every weight must be a named variable/dict entry, changeable in one place.
+* Do not silently reweight or impute a dimension score to cover a missing input — propagate NaN and report it instead.
+* Do not drop any publisher row, including those that end up with a NaN overall_score.
+* Do not alter or re-save publisher_features.csv.
+* Do not pick a resolution for either ambiguous mapping (Quality sub-split, "games count") without stating it explicitly as an assumption in both a code comment and the delivered summary.
+* Do not overengineer — no additional dimensions, no speculative features, no scaling beyond what's needed to combine review_score with avg_positive_review_ratio.
+
+Expected Output:
+* publisher_scores.csv: one row per publisher, containing rank, primary_publisher, game_count, the 4 dimension scores (scale_reach_score, quality_score, engagement_score, momentum_score), and overall_score.
+* A short written summary covering: the top-ranked publishers with their dimension breakdown, and the two stated assumptions for review/override.
+
+Validation:
+* Reload the output and confirm: no duplicate publishers, all dimension scores and overall_score fall within [0,1] where present, and the count of publishers with a NaN overall_score matches the count reported in the summary.
+
+'''
+# Request: 2026-08-20 20:15 CET.
+# Author: Anna Andruszkiewicz (prompt and adjustments), Claude (code)
+
+
 """
 Score and rank publishers from publisher_features.csv using 4 weighted
-dimensions. All weights are collected in WEIGHTS below -- edit there, not
-in the calculation logic, to change any assumption.
-
-Dimension formulas (as specified):
-  Scale & Reach (35%)     = 80% avg_owners_mid_norm + 20% avg_language_count_norm
-  Quality (30%)           = NOT sub-weighted by the user -- publisher_features.csv
-                             has two quality signals (review_score 0-9,
-                             avg_positive_review_ratio 0-1). DEFAULT: 50/50
-                             blend of both (review_score min-max'd to 0-1
-                             first). Change QUALITY_WEIGHTS below to use
-                             just one if that's what was meant.
-  Engagement (20%)        = avg_active_users_rate_norm (only engagement
-                             signal available, no sub-split needed)
-  Growth & Momentum (15%) = 60% recent_release_ratio + 40% "games count".
-                             AMBIGUOUS which count was meant:
-                               - game_count_norm (total portfolio size) <- DEFAULT
-                               - recent_release_count_norm (recent releases only)
-                             game_count_norm is used by default since it's the
-                             more literal name match, but recent_release_count
-                             arguably fits a "momentum" dimension better
-                             conceptually. Swap MOMENTUM_COUNT_COL below to
-                             switch.
-
-overall_score = weighted sum of the 4 dimension scores. NaN in a dimension
-propagates to NaN in overall_score for that publisher (not silently
-reweighted) -- these are reported separately, not dropped or guessed.
-
-Also generates 5 plots in the same run:
-  1. Top 10 publishers by overall_score (bar chart)
-  2. Top 5 publishers -- % contribution of each dimension (STACKED bar chart)
-  3. Top 10 publishers by review_score (0-9), bar chart
-  4. Top 10 publishers per individual dimension -- Scale & Reach, Quality,
-     Engagement, Growth & Momentum each get their own horizontal bar chart
-     (2x2 grid), each independently sorted/ranked by that one dimension
-     (not necessarily the same 10 publishers as the overall top 10)
+dimensions. Structured to follow the task numbering in the source prompt
+(Tasks 1-8) so each section below maps directly back to it.
 """
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-SRC = "data/feature_analysis/publisher_features.csv"
-OUT = "data/feature_analysis/publisher_scores.csv"
-PLOT_DIR = "reports/plots/"
+pd.set_option("display.width", 140)
 
-# ---------------------------------------------------------------------------
-# WEIGHTS -- edit here to change any assumption
-# ---------------------------------------------------------------------------
+SRC = "./publisher_features.csv"
+OUT = "./publisher_scores.csv"
+
+# =============================================================================
+# TASK 1: LOAD
+# =============================================================================
+df = pd.read_csv(SRC, low_memory=False)
+print("=" * 70)
+print("TASK 1: LOAD")
+print("=" * 70)
+print("Loaded publisher_features.csv:", df.shape)
+
+# =============================================================================
+# TASK 2: WEIGHTS -- every weight named, editable in one place, sums to 1
+# =============================================================================
+# Scope decisions (stated explicitly, per the prompt):
+#   - "Player count" / "language count" -> avg_owners_mid_norm /
+#     avg_language_count_norm (already-normalized reach features).
+#   - Quality has no stated sub-split. Resolved as a 50/50 blend of
+#     review_score (min-max'd to 0-1 in TASK 3) and avg_positive_review_ratio
+#     (already 0-1).
+#   - Engagement has only one signal (avg_active_users_rate_norm) -- no
+#     sub-split needed.
+#   - "Ratio" in Growth & Momentum -> recent_release_ratio (already 0-1,
+#     matches the name directly).
+#   - "Games count" in Growth & Momentum -> recent_release_count_norm
+#     (recent releases only, NOT total portfolio size / game_count_norm).
+print("\n" + "=" * 70)
+print("TASK 2: WEIGHTS")
+print("=" * 70)
+
 DIMENSION_WEIGHTS = {
     "scale_reach_score": 0.35,
     "quality_score": 0.30,
@@ -236,292 +340,105 @@ DIMENSION_WEIGHTS = {
 assert abs(sum(DIMENSION_WEIGHTS.values()) - 1.0) < 1e-9, "dimension weights must sum to 1"
 
 SCALE_REACH_WEIGHTS = {"avg_owners_mid_norm": 0.80, "avg_language_count_norm": 0.20}
-assert abs(sum(SCALE_REACH_WEIGHTS.values()) - 1.0) < 1e-9
+assert abs(sum(SCALE_REACH_WEIGHTS.values()) - 1.0) < 1e-9, "scale & reach sub-weights must sum to 1"
 
 QUALITY_WEIGHTS = {"review_score_norm": 0.50, "avg_positive_review_ratio": 0.50}
-assert abs(sum(QUALITY_WEIGHTS.values()) - 1.0) < 1e-9
+assert abs(sum(QUALITY_WEIGHTS.values()) - 1.0) < 1e-9, "quality sub-weights must sum to 1"
 
-MOMENTUM_COUNT_COL = "game_count_norm"  # alternative: "recent_release_count_norm"
-MOMENTUM_WEIGHTS = {"recent_release_ratio": 0.60, MOMENTUM_COUNT_COL: 0.40}
-assert abs(sum(MOMENTUM_WEIGHTS.values()) - 1.0) < 1e-9
+MOMENTUM_WEIGHTS = {"recent_release_ratio": 0.60, "recent_release_count_norm": 0.40}
+assert abs(sum(MOMENTUM_WEIGHTS.values()) - 1.0) < 1e-9, "momentum sub-weights must sum to 1"
 
-df = pd.read_csv(SRC, low_memory=False)
-print("Loaded publisher_features.csv:", df.shape)
+print("DIMENSION_WEIGHTS:", DIMENSION_WEIGHTS)
+print("SCALE_REACH_WEIGHTS:", SCALE_REACH_WEIGHTS)
+print("QUALITY_WEIGHTS:", QUALITY_WEIGHTS)
+print("MOMENTUM_WEIGHTS:", MOMENTUM_WEIGHTS)
 
-# ---------------------------------------------------------------------------
-# review_score (0-9) needs its own min-max to 0-1 to be combined with
-# avg_positive_review_ratio (already 0-1) into the Quality dimension --
-# publisher_features.csv left review_score unnormalized on purpose (per
-# earlier decision to keep it human-interpretable there); it's normalized
-# here only because this script needs to combine it with another 0-1 metric.
-# ---------------------------------------------------------------------------
+# =============================================================================
+# TASK 3: RESCALE review_score FOR THE QUALITY BLEND ONLY
+# =============================================================================
+# publisher_features.csv intentionally left review_score (0-9) unnormalized
+# to stay human-interpretable there. It's rescaled here, in a NEW column,
+# only because this script needs to combine it with avg_positive_review_ratio
+# (already 0-1) into a single Quality dimension. review_score itself is
+# untouched and not re-saved.
+print("\n" + "=" * 70)
+print("TASK 3: RESCALE review_score (0-9 -> 0-1) FOR QUALITY BLEND")
+print("=" * 70)
 rs_min, rs_max = df["review_score"].min(), df["review_score"].max()
 df["review_score_norm"] = (df["review_score"] - rs_min) / (rs_max - rs_min)
+print(f"review_score range: [{rs_min}, {rs_max}] -> review_score_norm range: [0, 1]")
 
-# ---------------------------------------------------------------------------
-# DIMENSION SCORES
-# ---------------------------------------------------------------------------
+# =============================================================================
+# TASK 4: DIMENSION SCORES
+# =============================================================================
+print("\n" + "=" * 70)
+print("TASK 4: DIMENSION SCORES")
+print("=" * 70)
 df["scale_reach_score"] = sum(df[c] * w for c, w in SCALE_REACH_WEIGHTS.items())
 df["quality_score"] = sum(df[c] * w for c, w in QUALITY_WEIGHTS.items())
 df["engagement_score"] = df["avg_active_users_rate_norm"]
 df["momentum_score"] = sum(df[c] * w for c, w in MOMENTUM_WEIGHTS.items())
+print("Computed: scale_reach_score, quality_score, engagement_score, momentum_score")
 
-# ---------------------------------------------------------------------------
-# OVERALL SCORE + RANK
-# ---------------------------------------------------------------------------
-df["overall_score"] = sum(df[c] * w for c, w in DIMENSION_WEIGHTS.items())
-df["rank"] = df["overall_score"].rank(ascending=False, method="min").astype("Int64")
-df = df.sort_values("overall_score", ascending=False)
-
-# ---------------------------------------------------------------------------
-# VALIDATE
-# ---------------------------------------------------------------------------
-print("\nDimension score ranges (should all be ~0-1):")
-for c in ["scale_reach_score", "quality_score", "engagement_score", "momentum_score", "overall_score"]:
-    print(f"  {c:20s} min={df[c].min():.3f}  max={df[c].max():.3f}  NaN count={df[c].isna().sum()}")
-
-print("\nduplicate publishers:", df["primary_publisher"].duplicated().sum())
-
-print("\nTop 15 publishers by overall_score:")
-print(df[["rank", "primary_publisher", "game_count", "scale_reach_score",
-          "quality_score", "engagement_score", "momentum_score", "overall_score"]]
-      .head(15).to_string(index=False))
-
-# ---------------------------------------------------------------------------
-# SAVE
-# ---------------------------------------------------------------------------
-final_cols = [
-    "rank", "primary_publisher", "game_count",
-    "scale_reach_score", "quality_score", "engagement_score", "momentum_score",
-    "overall_score",
-]
-#df[final_cols].to_csv(OUT, index=False)
-#print(f"\nSaved: {OUT}  shape={df[final_cols].shape}")
-
-# ---------------------------------------------------------------------------
-# PLOTS
-# ---------------------------------------------------------------------------
+# =============================================================================
+# TASK 5: OVERALL SCORE -- NaN in any dimension propagates, never reweighted
+# =============================================================================
+print("\n" + "=" * 70)
+print("TASK 5: OVERALL SCORE")
+print("=" * 70)
 DIMS = ["scale_reach_score", "quality_score", "engagement_score", "momentum_score"]
-LABELS = {
-    "scale_reach_score": "Scale & Reach",
-    "quality_score": "Quality",
-    "engagement_score": "Engagement",
-    "momentum_score": "Growth & Momentum",
-}
-COLORS = {
-    "scale_reach_score": "#5B9BD5",   # dusty blue
-    "quality_score": "#8FAE5D",       # dusty green
-    "engagement_score": "#D0715A",    # dusty red
-    "momentum_score": "#D9A441",      # dusty yellow
-}
-# rank within each dimension, across ALL scored publishers (not just top 10)
-for d in DIMS:
-    df[d + "_rank"] = df[d].rank(ascending=False, method="min").astype("Int64")
+df["overall_score"] = sum(df[c] * DIMENSION_WEIGHTS[c] for c in DIMS)
 
-top10 = df.head(10)
-top5 = top10.head(5)
+nan_overall = df["overall_score"].isna()
+print(f"Publishers with NaN overall_score: {nan_overall.sum()}")
+if nan_overall.sum() > 0:
+    nan_reasons = df.loc[nan_overall, DIMS].isna()
+    print("Which dimension(s) caused it (count of publishers missing each):")
+    print(nan_reasons.sum().to_string())
 
-# --- Plot 1: Top 10 by overall_score ---------------------------------------
-fig, ax = plt.subplots(figsize=(9, 6))
-plot_order = top10.iloc[::-1]
-colors = plt.cm.viridis(np.linspace(0.85, 0.15, len(top10)))[::-1]
-bars = ax.barh(plot_order["primary_publisher"], plot_order["overall_score"], color="#107c10")
-for bar, val in zip(bars, plot_order["overall_score"]):
-    ax.text(val + 0.012, bar.get_y() + bar.get_height() / 2, f"{val:.3f}", va="center", fontsize=9)
-ax.set_xlabel("Overall Score")
-ax.set_title("Top 10 Publishers by Overall Score", fontsize=13, fontweight="bold")
-ax.set_xlim(0, top10["overall_score"].max() * 1.15)
-ax.spines[["top", "right"]].set_visible(False)
-plt.tight_layout()
-plt.savefig(f"{PLOT_DIR}/plot1_top10_overall.png", dpi=150)
-plt.close()
+# =============================================================================
+# TASK 6: RANK
+# =============================================================================
+print("\n" + "=" * 70)
+print("TASK 6: RANK")
+print("=" * 70)
+df["rank"] = df["overall_score"].rank(ascending=False, method="min").astype("Int64")
+df = df.sort_values("overall_score", ascending=False, na_position="last")
+print("Ranked by overall_score, descending, ties share the same rank (method='min').")
 
-# --- Plot 2: Top 5 -- % contribution of each dimension (STACKED bar) -------
-contrib_pct = pd.DataFrame({d: top5[d] * DIMENSION_WEIGHTS[d] for d in DIMS})
-contrib_pct = contrib_pct.div(contrib_pct.sum(axis=1), axis=0) * 100
-contrib_pct.index = top5["primary_publisher"]
-contrib_pct = contrib_pct.iloc[::-1]  # so #1 plots on top
+# =============================================================================
+# TASK 7: EXECUTE AND VALIDATE
+# =============================================================================
+print("\n" + "=" * 70)
+print("TASK 7: EXECUTE AND VALIDATE")
+print("=" * 70)
+for c in DIMS + ["overall_score"]:
+    vals = df[c].dropna()
+    in_range = vals.between(0, 1).all()
+    print(f"  {c:20s} min={vals.min():.3f}  max={vals.max():.3f}  within [0,1]: {in_range}  NaN count={df[c].isna().sum()}")
 
-fig, ax = plt.subplots(figsize=(9, 5))
-left = np.zeros(len(contrib_pct))
-for d in DIMS:
-    bars = ax.barh(contrib_pct.index, contrib_pct[d], left=left, color=COLORS[d], label=LABELS[d])
-    for i, (pub, val) in enumerate(zip(contrib_pct.index, contrib_pct[d])):
-        if val > 4:
-            ax.text(left[i] + val / 2, i, f"{val:.0f}%", ha="center", va="center", fontsize=9, fontweight="bold", color="white")
-    left += contrib_pct[d].values
-ax.set_xlabel("% Contribution to Overall Score")
-ax.set_xlim(0, 100)
-ax.set_title("Dimension Contribution to Overall Score -- Top 5 Publishers", fontsize=13, fontweight="bold")
-ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=4, frameon=False)
-ax.spines[["top", "right"]].set_visible(False)
-plt.tight_layout()
-plt.savefig(f"{PLOT_DIR}/plot2_top5_contribution.png", dpi=150, bbox_inches="tight")
-plt.close()
+dup_count = df["primary_publisher"].duplicated().sum()
+print(f"\nduplicate publishers: {dup_count}")
+print(f"NaN overall_score count matches TASK 5 report: {df['overall_score'].isna().sum() == nan_overall.sum()}")
 
+# =============================================================================
+# SAVE
+# =============================================================================
+final_cols = ["rank", "primary_publisher", "game_count"] + DIMS + ["overall_score"]
+df[final_cols].to_csv(OUT, index=False)
+print(f"\nSaved: {OUT}  shape={df[final_cols].shape}")
 
-# --- Plot 3: Top 10 by review_score (0-9) -----------------------------------
-top10_review = df.dropna(subset=["review_score"]).nlargest(10, "review_score")
-print("\nTop 10 publishers by review_score (0-9, zeros excluded from the average upstream):")
-print(top10_review[["primary_publisher", "game_count", "review_score"]].to_string(index=False))
+# =============================================================================
+# TASK 8: DELIVER (short summary)
+# =============================================================================
+print("\n" + "=" * 70)
+print("TASK 8: SUMMARY")
+print("=" * 70)
+print("Top 15 publishers by overall_score:")
+print(df[final_cols].head(15).to_string(index=False))
 
-fig, ax = plt.subplots(figsize=(9, 6))
-plot_order = top10_review.iloc[::-1]
-colors = plt.cm.viridis(np.linspace(0.85, 0.15, len(plot_order)))[::-1]
-bars = ax.barh(plot_order["primary_publisher"], plot_order["review_score"], color="#107c10")
-for bar, val in zip(bars, plot_order["review_score"]):
-    ax.text(val + 0.06, bar.get_y() + bar.get_height() / 2, f"{val:.2f}", va="center", fontsize=9)
-ax.set_xlabel("Review Score (0-9)")
-ax.set_xlim(0, 9.5)
-ax.set_title("Top 10 Publishers by Review Score", fontsize=13, fontweight="bold")
-ax.spines[["top", "right"]].set_visible(False)
-plt.tight_layout()
-plt.savefig(f"{PLOT_DIR}/plot4_top10_review_score.png", dpi=150)
-plt.close()
-
-# --- Plot 4: Top 10 per individual dimension (2x2 grid) --------------------
-fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-for ax, d in zip(axes.flat, DIMS):
-    top10_dim = df.dropna(subset=[d]).nlargest(10, d).iloc[::-1]
-    colors = plt.cm.viridis(np.linspace(0.85, 0.15, len(top10_dim)))[::-1]
-    bars = ax.barh(top10_dim["primary_publisher"], top10_dim[d], color="#107c10")
-    for bar, val in zip(bars, top10_dim[d]):
-        ax.text(val + 0.012, bar.get_y() + bar.get_height() / 2, f"{val:.3f}", va="center", fontsize=8)
-    ax.set_xlabel(f"{LABELS[d]} Score")
-    ax.set_xlim(0, top10_dim[d].max() * 1.15)
-    ax.set_title(f"Top 10 by {LABELS[d]}", fontsize=12, fontweight="bold")
-    ax.spines[["top", "right"]].set_visible(False)
-fig.suptitle("Top 10 Publishers per Individual Dimension", fontsize=15, fontweight="bold", y=1.01)
-plt.tight_layout()
-plt.savefig(f"{PLOT_DIR}/plot5_top10_per_dimension.png", dpi=150, bbox_inches="tight")
-plt.close()
-
-
-
-
-# Identify the top 3 by overall_score, excluding Xbox itself (the baseline/
-# acquirer, not a target) -- labels reference rank only, not the name.
-ranked = df[df["primary_publisher"] != "Xbox Game Studios"].sort_values("overall_score", ascending=False)
-top5_publishers = ranked["primary_publisher"].head(5).tolist()
-
-ACQUISITION_STEPS = [
-    ("Xbox Game Studios\n(baseline)", ["Xbox Game Studios"]),
-    ("+ Rank #1", ["Xbox Game Studios", top5_publishers[0]]),
-    ("+ Rank #2", ["Xbox Game Studios", top5_publishers[0], top5_publishers[1]]),
-    ("+ Rank #3", ["Xbox Game Studios", top5_publishers[0], top5_publishers[1], top5_publishers[2]])
-   
-]
-
-# Simple average of each publisher's own avg_owners_mid -- equal-weights
-# every publisher regardless of portfolio size.
-labels, total_owners, total_games = [], [], []
-for label, publishers in ACQUISITION_STEPS:
-    subset = df[df["primary_publisher"].isin(publishers)]
-    labels.append(label)
-    total_owners.append((subset["avg_owners_mid"] * subset["game_count"]).sum())
-    total_games.append(subset["game_count"].sum())
-
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
-
-colors = plt.cm.viridis(np.linspace(0.85, 0.15, len(labels)))
-
-bars1 = ax1.bar(labels, total_owners, color="#107c10")
-for bar, val in zip(bars1, total_owners):
-    ax1.text(bar.get_x() + bar.get_width() / 2, val, f"{val:,.0f}", ha="center", va="bottom", fontsize=9, fontweight="bold")
-ax1.set_ylabel("Total Combined Reach (sum of owners_mid)")
-ax1.set_title("Cumulative Reach", fontsize=13, fontweight="bold")
-ax1.spines[["top", "right"]].set_visible(False)
-
-bars2 = ax2.bar(labels, total_games, color="#107c10")
-for bar, val in zip(bars2, total_games):
-    ax2.text(bar.get_x() + bar.get_width() / 2, val, f"{val:,.0f}", ha="center", va="bottom", fontsize=9, fontweight="bold")
-ax2.set_ylabel("Total Combined Portfolio Size (game_count)")
-ax2.set_title("Cumulative Game Count", fontsize=13, fontweight="bold")
-ax2.spines[["top", "right"]].set_visible(False)
-
-fig.suptitle("Scale & Reach: Cumulative Acquisition Impact", fontsize=15, fontweight="bold")
-plt.tight_layout()
-plt.savefig("./acquisition_reach.png", dpi=150, bbox_inches="tight")
-plt.close()
-
-# --- Plot: Top 10 -- relative strength per dimension (grouped bars) --------
-# Re-scale each dimension using ONLY the top 10's own min/max (not the full
-# ~800-publisher pool). Against the full pool, all 10 finalists sit bunched
-# near the top of every dimension, so differences barely show. Rescaling
-# within just this group is what actually reveals who's relatively strong
-# or weak at what -- this is about differentiating the finalists, not
-# re-deriving the original overall_score (which is why weights don't apply
-# here).
-EXCLUDE_PUBLISHERS = ["PlayStation Publishing LLC"]
-
-top10_candidates = df[~df["primary_publisher"].isin(EXCLUDE_PUBLISHERS)].nlargest(4, "overall_score")
-
-x = np.arange(len(top10_candidates))
-width = 0.2
-
-fig, ax = plt.subplots(figsize=(15, 7))
-for i, d in enumerate(DIMS):
-    offset = (i - 1.5) * width
-    bars = ax.bar(x + offset, top10_candidates[d], width, label=LABELS[d], color=COLORS[d])
-    for bar, val in zip(bars, top10_candidates[d]):
-        ax.text(bar.get_x() + bar.get_width() / 2, val + 0.01, f"{val:.2f}", ha="center", va="bottom", fontsize=7)
-
-ax.set_xticks(x)
-ax.set_xticklabels(top10_candidates["primary_publisher"], rotation=25, ha="right")
-ax.set_ylabel("Dimension Score (0-1, scaled against all publishers)")
-ax.set_title("Top 10 Acquisition Candidates -- Dimension Scores", fontsize=13, fontweight="bold")
-ax.set_ylim(0, 1.15)
-ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.25), ncol=4, frameon=False)
-ax.spines[["top", "right"]].set_visible(False)
-plt.tight_layout()
-plt.savefig(f"{PLOT_DIR}/plot6_top10_overall.png", dpi=150, bbox_inches="tight")
-plt.close()
-
-# --- Plot 7: Cumulative revenue from acquiring top-ranked publishers -------
-BASELINE = "Xbox Game Studios"
-EXCLUDE_PUBLISHERS = ["PlayStation Publishing LLC"]
-
-top3_targets = (
-    df[~df["primary_publisher"].isin(EXCLUDE_PUBLISHERS + [BASELINE])]
-    .nlargest(3, "overall_score")["primary_publisher"]
-    .tolist()
-)
-
-ACQUISITION_STEPS = [
-    (f"{BASELINE}\n(baseline)", [BASELINE]),
-    ("+ Rank #1", [BASELINE, top3_targets[0]]),
-    ("+ Rank #2", [BASELINE, top3_targets[0], top3_targets[1]]),
-    ("+ Rank #3", [BASELINE, top3_targets[0], top3_targets[1], top3_targets[2]]),
-]
-
-# total_est_revenue is already a per-publisher SUM (not average), so
-# summing it across the included publishers is a true cumulative total --
-# always non-negative, so this can only go up, never dip like the earlier
-# simple-average version did.
-labels, cumulative_revenue = [], []
-for label, publishers in ACQUISITION_STEPS:
-    subset = df[df["primary_publisher"].isin(publishers)]
-    labels.append(label)
-    cumulative_revenue.append(subset["total_est_revenue"].sum())
-
-fig, ax = plt.subplots(figsize=(9, 6))
-colors = plt.cm.viridis(np.linspace(0.85, 0.15, len(labels)))
-bars = ax.bar(labels, cumulative_revenue, color=colors)
-for bar, val in zip(bars, cumulative_revenue):
-    ax.text(bar.get_x() + bar.get_width() / 2, val, f"€{val:,.0f}", ha="center", va="bottom", fontsize=9, fontweight="bold")
-ax.set_ylabel("Cumulative Estimated Revenue (EUR)")
-ax.set_title("Cumulative Revenue Impact of Acquiring Top-Ranked Publishers", fontsize=13, fontweight="bold")
-ax.spines[["top", "right"]].set_visible(False)
-plt.tight_layout()
-plt.savefig(f"{PLOT_DIR}/plot7_cumulative_revenue.png", dpi=150, bbox_inches="tight")
-plt.close()
-
-
-print("\nSaved 7 plots:")
-print(f"  {PLOT_DIR}/plot1_top10_overall.png")
-print(f"  {PLOT_DIR}/plot2_top5_contribution.png")
-print(f"  {PLOT_DIR}/plot3_top10_rank_heatmap.png")
-print(f"  {PLOT_DIR}/plot4_top10_review_score.png")
-print(f"  {PLOT_DIR}/plot5_top10_per_dimension.png")
-print(f"  {PLOT_DIR}/plot6_top10_overall.png")
-print(f"  {PLOT_DIR}/plot7_cumulative_revenue.png")
+print("\nAssumptions applied (stated for review/override):")
+print("  1. Quality (30%) = 50/50 blend of review_score_norm and avg_positive_review_ratio")
+print("     (no sub-split was specified; review_score min-max'd to 0-1 only for this blend).")
+print("  2. Growth & Momentum 'games count' (40% of the 15% dimension) = "
+      "recent_release_count_norm (recent releases only, not total portfolio size).")
