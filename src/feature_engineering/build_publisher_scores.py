@@ -1927,6 +1927,8 @@ publisher_scores.csv
 
 Only the new sensitivity-analysis outputs should be created.'''
 
+# Request: 2026-08-21 2 0:04 CET.
+# Author: Christian Beemelmann (prompt and adjustments), ChatGPT (code)
 
 """
 Sensitivity analysis for the existing publisher scoring model.
