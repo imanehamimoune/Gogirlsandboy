@@ -60,10 +60,9 @@ The tags dataset was inspected for its structure, data types, missing values, du
 
 Because an individual game can legitimately have multiple tags, multiple observations for the same `app_id` were intentionally preserved. Only duplicate combinations of `app_id` and tag were considered redundant.
 
-Tag values were stripped of leading and trailing whitespace, and the cleaning procedure included removal of empty tags and duplicate `app_id`–tag combinations where present. The original Steam naming conventions were deliberately retained instead of introducing unnecessary renaming or broader category consolidation.
+Tag values were stripped of leading and trailing whitespace, and the cleaning procedure included removal of empty tags and duplicate `app_id`–tag combinations where present. The original Steam naming conventions were deliberately retained.
 
 The quality assessment ultimately found no material data-quality problems requiring observations to be removed.
-The processed dataset was exported separately as `tags_cleaned.csv`.
 
 ## `genres.csv`
 
@@ -75,8 +74,6 @@ Multiple genres for an individual game were intentionally retained because they 
 
 The standardization reduced **121 original genre labels to 33 consistent English genre categories**. According to the preprocessing validation, no missing values or duplicate `app_id`–genre combinations remained after cleaning.
 
-The resulting data was exported as `genres_cleaned.csv`.
-
 ## `categories.csv`
 
 The categories dataset contained a similar multilingual standardization problem. Initial checks covered missing values, duplicates, whitespace, empty values, case inconsistencies, and the range of unique categories.
@@ -84,7 +81,6 @@ The categories dataset contained a similar multilingual standardization problem.
 Two rounds of mapping were used to consolidate equivalent multilingual labels into standardized English categories. Importantly, standardization was based on functional equivalence rather than simply grouping similar concepts. Categories representing genuinely different Steam features were kept separate. For example, `PvP`, `Online PvP`, and `Shared/Split Screen PvP` remained distinct, as did the corresponding Co-op categories and different forms of VR functionality.
 
 The process reduced **315 original category labels to 42 standardized English categories**. Because several original labels could map to the same standardized category for a game, the mapping process generated redundant `app_id`–category combinations. These duplicates were removed after standardization, resulting in the removal of **79 redundant rows**.
-The cleaned dataset was exported as `categories_cleaned.csv`.
 
 ## `descriptions.csv`
 
@@ -92,7 +88,7 @@ The descriptions dataset contained the text fields `summary`, `extensive`, and `
 
 HTML was removed from each of the three description fields using BeautifulSoup while preserving the underlying textual content. Following HTML removal, records with fewer than 20 characters in any of the specified description fields were filtered from the processed version.
 
-However, the descriptions dataset was ultimately **excluded from the merged master dataset**. The information relevant to the analytical objective was already represented through more standardized variables in the genres, tags, and categories datasets. These structured categorical variables were preferred over free-form descriptions for the subsequent publisher analysis. The exclusion of `descriptions.csv` was therefore primarily a feature-selection decision for the master dataset rather than simply a data-quality decision.
+However, the descriptions dataset was ultimately **excluded from the merged master dataset**. The information relevant to the analytical objective was already represented through more standardized variables in the genres, tags, and categories datasets. These structured categorical variables were preferred over free-form descriptions for the subsequent publisher analysis.
 
 ## `promotional.csv`
 
@@ -100,10 +96,8 @@ The promotional dataset was **excluded from the master dataset without being use
 
 These variables were considered outside the scope of the analysis. The objective of the project is to identify and evaluate **high-performing publishers**, and the promotional fields did not provide relevant measures for evaluating publisher performance within the chosen analytical strategy.
 
-The exclusion of `promotional.csv` should therefore be understood as a **relevance-based feature-selection decision**, rather than the result of poor data quality.
-
 ## Overall Preprocessing Approach
 
-Across the datasets, preprocessing followed a conservative approach. Information was standardized where inconsistent formatting or multilingual labels would otherwise prevent meaningful comparison. Redundant variables were removed only when their redundancy was established, while variables representing similar information from genuinely different sources were retained. Missing values were generally preserved rather than imputed, and unusual or extreme observations were flagged instead of automatically deleted.
+Across the datasets, preprocessing followed a conservative approach. Information was standardized where inconsistent formatting or multilingual labels would otherwise prevent meaningful comparison. Redundant variables were removed only when their redundancy was established, while variables representing similar information from different sources were retained. Missing values were preserved rather than imputed, and unusual or extreme observations were flagged instead of automatically deleted.
 
 The final master dataset focused on variables relevant to identifying high-performing publishers. Structured game characteristics from games, tags, genres, and categories were therefore prioritized, alongside review, ownership, pricing, and publisher information. Free-text descriptions and promotional assets were excluded because more standardized or analytically relevant representations of the required information were available elsewhere.
