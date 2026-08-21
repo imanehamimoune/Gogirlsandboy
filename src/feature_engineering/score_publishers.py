@@ -29,9 +29,9 @@ reweighted) -- these are reported separately, not dropped or guessed.
 
 Also generates 3 plots in the same run:
   1. Top 10 publishers by overall_score (bar chart)
-  2. Top 5 publishers -- % contribution of each dimension (donut charts)
-  3. Top 10 publishers -- rank in each individual dimension out of all
-     scored publishers (heatmap)
+  2. Top 4 publishers -- % contribution of each dimension (donut charts)
+  3. Top 4 publishers -- rank in each individual dimension out of all
+     scored publishers (bump chart)
 """
 
 import matplotlib.pyplot as plt
@@ -40,7 +40,7 @@ import pandas as pd
 
 SRC = "data/feature_analysis/publisher_features.csv"
 OUT = "data/feature_analysis/publisher_scores.csv"
-PLOT_DIR = "src/feature_engineering/"
+PLOT_DIR = "reports/plots/"
 
 # ---------------------------------------------------------------------------
 # WEIGHTS -- edit here to change any assumption
