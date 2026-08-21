@@ -1,45 +1,72 @@
 """
-Create a Python function that performs a basic data-quality assessment of a pandas DataFrame.
+## Role
 
-The function should print a clearly structured report containing:
+You are a data analyst working with Python and pandas. Your responsibility is to assess the quality of a dataset before any cleaning or preprocessing is performed.
 
-1. **Basic information**
+## Context
 
-   * Dataset shape (number of rows and columns)
-   * Data type of each column
+The dataset contains application descriptions and includes an `app_id` column together with several text columns. The text columns to inspect are provided through a `text_columns` parameter and may contain missing values, empty strings, HTML, or unusually short descriptions.
 
-2. **Missing values**
+## Objective
 
-   * Number of missing (`NaN`) values in every column
+Create a reusable Python function called `data_quality_report(df, text_columns)` that examines the DataFrame and prints a clear summary of potential data-quality issues without modifying the original data.
 
-3. **Duplicates**
+## Tasks
 
-   * Number of completely duplicated rows
-   * Number of duplicated `app_id` values
+The function should perform the following checks:
 
-4. **Empty text values**
+1. Report the dataset shape and data type of each column.
+2. Count missing (`NaN`) values for every column.
+3. Count completely duplicated rows.
+4. Count duplicated values in the `app_id` column.
+5. For each column in `text_columns`, count values that are empty or contain only whitespace.
+6. For each text column, detect and count rows containing HTML tags using a regular expression.
+7. Calculate the character length of each text value and print descriptive statistics using `describe()`.
+8. Identify non-missing descriptions shorter than 20 characters.
+9. For each text column, print the number of very short descriptions and display the first 10 examples together with their `app_id`.
 
-   * For each column provided in `text_columns`, count values that are empty strings or contain only whitespace.
-   * Treat missing values as empty for this check.
+## Constraints
 
-5. **HTML detection**
+* Use Python and pandas.
+* The function must be named `data_quality_report(df, text_columns)`.
+* Do not modify the input DataFrame.
+* Do not remove, replace, or clean any values.
+* Treat missing values as empty strings only when checking for empty values, HTML, or calculating text lengths.
+* Exclude missing values when identifying descriptions shorter than 20 characters.
+* Use clear section headings to make the printed report easy to read.
+* Keep the implementation straightforward and readable rather than introducing unnecessary abstractions.
 
-   * For each text column, count how many rows appear to contain HTML tags.
-   * Use a suitable regular expression to detect HTML-like tags.
+## Expected Output
 
-6. **Description lengths**
+Provide the complete Python implementation of `data_quality_report(df, text_columns)`.
 
-   * Calculate the character length of each text value.
-   * Print descriptive statistics such as count, mean, standard deviation, minimum, quartiles, and maximum.
+When executed, the function should print a structured report containing:
 
-7. **Very short descriptions**
+* Basic dataset information
+* Missing-value counts
+* Duplicate counts
+* Empty-value counts for text columns
+* HTML detection counts
+* Description-length statistics
+* Counts and examples of descriptions shorter than 20 characters
 
-   * For each text column, identify non-missing descriptions shorter than 20 characters.
-   * Print the total number of these rows.
-   * Display the first 10 examples together with their `app_id`.
+The function does not need to return a new DataFrame.
 
-The function should **only inspect and report on the data**. It should not modify, clean, remove, or return filtered rows. Use clear section headings so that the output is easy to read.
+## Validation
+
+Verify that:
+
+* The original DataFrame remains unchanged after running the function.
+* Missing values are counted correctly.
+* Duplicate rows and duplicate `app_id` values are reported separately.
+* Whitespace-only strings are recognized as empty.
+* HTML detection is performed for every specified text column.
+* Length statistics are produced for every specified text column.
+* Only non-missing descriptions shorter than 20 characters appear in the very-short-description check.
+* No data-cleaning or filtering operations are performed.
 """
+# Request: 2026-08-19 21:37 CET.
+# Author: Sarah Chen (prompt and adjustments), ChatGPT (code)
 
 # ===== 1. IMPORTS =====
 
