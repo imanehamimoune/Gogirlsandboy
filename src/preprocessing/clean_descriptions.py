@@ -1,3 +1,46 @@
+"""
+Create a Python function that performs a basic data-quality assessment of a pandas DataFrame.
+
+The function should print a clearly structured report containing:
+
+1. **Basic information**
+
+   * Dataset shape (number of rows and columns)
+   * Data type of each column
+
+2. **Missing values**
+
+   * Number of missing (`NaN`) values in every column
+
+3. **Duplicates**
+
+   * Number of completely duplicated rows
+   * Number of duplicated `app_id` values
+
+4. **Empty text values**
+
+   * For each column provided in `text_columns`, count values that are empty strings or contain only whitespace.
+   * Treat missing values as empty for this check.
+
+5. **HTML detection**
+
+   * For each text column, count how many rows appear to contain HTML tags.
+   * Use a suitable regular expression to detect HTML-like tags.
+
+6. **Description lengths**
+
+   * Calculate the character length of each text value.
+   * Print descriptive statistics such as count, mean, standard deviation, minimum, quartiles, and maximum.
+
+7. **Very short descriptions**
+
+   * For each text column, identify non-missing descriptions shorter than 20 characters.
+   * Print the total number of these rows.
+   * Display the first 10 examples together with their `app_id`.
+
+The function should **only inspect and report on the data**. It should not modify, clean, remove, or return filtered rows. Use clear section headings so that the output is easy to read.
+"""
+
 # ===== 1. IMPORTS =====
 
 import pandas as pd
@@ -83,16 +126,7 @@ print(f"Loaded {len(df):,} rows.")
 
 # # ===== 5. DATA QUALITY REPORT =====
 
-# data_quality_report(df, TEXT_COLUMNS)
-
-# for col in TEXT_COLUMNS:
-#     short = df_processed.loc[
-#         df_processed[col].notna() & (df_processed[col].str.len() < 20),
-#         col
-#     ]
-
-#     print(f"\n--- {col} ---")
-#     print(short.value_counts().head(20))
+data_quality_report(df, TEXT_COLUMNS)
 
 # # ===== 6. PROCESS DATA =====
 
@@ -107,11 +141,11 @@ for col in TEXT_COLUMNS:
 
 # ===== 7. SAVE DATA INTO CSV =====
 
-# df_processed.to_csv(
-#     "data/processed/descriptions_cleaned.zip",
-#     index=False,
-#     compression={
-#         "method": "zip",
-#         "archive_name": "descriptions_cleaned.csv"
-#     }
-# )
+df_processed.to_csv(
+    "data/processed/descriptions_cleaned.zip",
+    index=False,
+    compression={
+        "method": "zip",
+        "archive_name": "descriptions_cleaned.csv"
+    }
+)
