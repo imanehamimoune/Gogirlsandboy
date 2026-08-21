@@ -74,9 +74,7 @@ import pandas as pd
 # 1. LOAD DATA
 # =====================================================
 
-tags = pd.read_csv(
-    r"E:\bbbb\Frankfurt School\2026 WS\Advanced Analytics in Practice\tags\tags.csv"
-)
+tags = pd.read_csv("data/raw/tags.zip")
 
 original_rows = len(tags)
 
@@ -201,10 +199,7 @@ print("Rows removed:", original_rows - len(tags))
 # 8. EXPORT CLEANED DATA
 # =====================================================
 
-tags.to_csv(
-    r"E:\bbbb\Frankfurt School\2026 WS\Advanced Analytics in Practice\tags\tags_cleaned.csv",
-    index=False
-)
+tags.to_csv("data/processed/tags_cleaned.csv", index=False)
 
 print("\nTags data cleaning completed successfully.")
 
@@ -222,9 +217,7 @@ print("\nTags data cleaning completed successfully.")
 # 1. LOAD DATA
 # =====================================================
 
-genres = pd.read_csv(
-    r"E:\bbbb\Frankfurt School\2026 WS\Advanced Analytics in Practice\genres\genres.csv"
-)
+genres = pd.read_csv("data/raw/genres.zip")
 
 original_rows = len(genres)
 
@@ -476,10 +469,7 @@ print("Rows removed:", original_rows - len(genres))
 # 10. EXPORT CLEANED DATA
 # =====================================================
 
-genres.to_csv(
-    r"E:\bbbb\Frankfurt School\2026 WS\Advanced Analytics in Practice\genres\genres_cleaned.csv",
-    index=False
-)
+genres.to_csv("data/processed/genres_cleaned.csv", index=False)
 
 print("\nGenres data cleaning completed successfully.")
 
@@ -535,9 +525,7 @@ print(top5_genres_game_pct)
 # 1. LOAD DATA
 # =====================================================
 
-categories = pd.read_csv(
-    r"E:\bbbb\Frankfurt School\2026 WS\Advanced Analytics in Practice\categories\categories.csv"
-)
+categories = pd.read_csv("data/raw/categories.zip")
 
 original_rows = len(categories)
 
@@ -1081,10 +1069,7 @@ print("Rows removed:", original_rows - len(categories))
 # 11. EXPORT CLEANED DATA
 # =====================================================
 
-categories.to_csv(
-    r"E:\bbbb\Frankfurt School\2026 WS\Advanced Analytics in Practice\categories\categories_cleaned.csv",
-    index=False
-)
+categories.to_csv("data/processed/categories_cleaned.csv", index=False)
 
 print("\nCategories data cleaning completed successfully.")
 
