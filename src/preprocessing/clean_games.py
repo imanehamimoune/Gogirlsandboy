@@ -3,7 +3,7 @@ import json
 import numpy as np
 
 df_raw = pd.read_csv(
-    'data/games.csv',
+    'data/raw/games.zip',
     escapechar='\\'
 )
 
@@ -79,4 +79,4 @@ df["language_count"] = (
     .apply(lambda x: len(x) if isinstance(x, list) else 0)
 )
 
-df.to_csv('games.csv', index=False)
+df.to_csv('data/processed/games.csv', index=False)
