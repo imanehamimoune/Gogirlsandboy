@@ -297,6 +297,7 @@ dimensions. Structured to follow the task numbering in the source prompt
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 pd.set_option("display.width", 140)
 
@@ -444,6 +445,73 @@ print("  2. Growth & Momentum 'games count' (40% of the 15% dimension) = "
       "recent_release_count_norm (recent releases only, not total portfolio size).")
 
 
+DIMS = ["scale_reach_score", "quality_score", "engagement_score", "momentum_score"]
+LABELS = {"scale_reach_score": "Scale & Reach", "quality_score": "Quality",
+          "engagement_score": "Engagement", "momentum_score": "Growth & Momentum"}
+COLORS = {"scale_reach_score": "#4C72B0", "quality_score": "#55A868",
+          "engagement_score": "#C44E52", "momentum_score": "#DD8452"}
+
+top10 = df.head(10)
+
+# --- Plot 1: Top 10 by overall_score (solid green) -------------------------
+fig, ax = plt.subplots(figsize=(9, 6))
+plot_order = top10.iloc[::-1]
+bars = ax.barh(plot_order["publisher_primary"], plot_order["overall_score"], color="green")
+for bar, val in zip(bars, plot_order["overall_score"]):
+    ax.text(val + 0.012, bar.get_y() + bar.get_height() / 2, f"{val:.3f}", va="center", fontsize=9)
+ax.set_xlabel("Overall Score")
+ax.set_title("Top 10 Publishers by Overall Score", fontsize=13, fontweight="bold")
+ax.set_xlim(0, top10["overall_score"].max() * 1.15)
+ax.spines[["top", "right"]].set_visible(False)
+plt.tight_layout()
+plt.savefig("plot1_top10_overall.png", dpi=150)
+plt.close()
+
+# --- Plot 2: Acquisition candidates -- dimension scores (grouped, colored) -
+EXCLUDE_PUBLISHERS = ["PlayStation Publishing LLC"]
+XBOX_PUBLISHER = "Xbox Game Studios"  # adjust to match the exact string in your data
+
+pool = df[~df["publisher_primary"].isin(EXCLUDE_PUBLISHERS)]
+
+top3 = pool.nlargest(3, "overall_score")
+xbox_row = pool[pool["publisher_primary"] == XBOX_PUBLISHER]
+
+candidates = pd.concat([top3, xbox_row]).drop_duplicates(subset="publisher_primary")
+
+x = np.arange(len(candidates))
+width = 0.2
+fig, ax = plt.subplots(figsize=(15, 7))
+for i, d in enumerate(DIMS):
+    offset = (i - 1.5) * width
+    bars = ax.bar(x + offset, candidates[d], width, label=LABELS[d], color=COLORS[d])
+    for bar, val in zip(bars, candidates[d]):
+        ax.text(bar.get_x() + bar.get_width() / 2, val + 0.01, f"{val:.2f}", ha="center", va="bottom", fontsize=7)
+ax.set_xticks(x)
+ax.set_xticklabels(candidates["publisher_primary"], rotation=25, ha="right")
+ax.set_ylabel("Dimension Score (0-1, scaled against all publishers)")
+ax.set_title("Top 3 Acquisition Candidates -- Dimension Scores", fontsize=13, fontweight="bold")
+ax.set_ylim(0, 1.15)
+ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.25), ncol=4, frameon=False)
+ax.spines[["top", "right"]].set_visible(False)
+plt.tight_layout()
+plt.savefig("plot2_top3_across_dimensions.png", dpi=150, bbox_inches="tight")
+plt.close()
+
+# --- Plot 3: Top 10 per individual dimension (2x2 grid, solid green) -------
+fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+for ax, d in zip(axes.flat, DIMS):
+    top10_dim = df.dropna(subset=[d]).nlargest(10, d).iloc[::-1]
+    bars = ax.barh(top10_dim["publisher_primary"], top10_dim[d], color="green")
+    for bar, val in zip(bars, top10_dim[d]):
+        ax.text(val + 0.012, bar.get_y() + bar.get_height() / 2, f"{val:.3f}", va="center", fontsize=8)
+    ax.set_xlabel(f"{LABELS[d]} Score")
+    ax.set_xlim(0, top10_dim[d].max() * 1.15)
+    ax.set_title(f"Top 10 by {LABELS[d]}", fontsize=12, fontweight="bold")
+    ax.spines[["top", "right"]].set_visible(False)
+fig.suptitle("Top 10 Publishers per Individual Dimension", fontsize=15, fontweight="bold", y=1.01)
+plt.tight_layout()
+plt.savefig("plot3_top10_per_dimension.png", dpi=150, bbox_inches="tight")
+plt.close()
 
 
 ''' PART 3: DOING THE SENSITIVITY ANALYSIS '''
