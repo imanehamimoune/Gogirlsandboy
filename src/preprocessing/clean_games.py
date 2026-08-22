@@ -3,9 +3,7 @@
 ## Role
 
 You are an expert Data Analyst and Python/Pandas Data Engineer specializing in data cleaning, preprocessing, transformation, and reproducible data pipelines.
-
 Your task is to generate a **complete Python script** that loads a raw games CSV file, performs all specified cleaning and feature-engineering steps, and saves the resulting cleaned dataset as a new CSV file.
-
 The generated code must be **fully executable as provided**.
 
 ---
@@ -21,7 +19,6 @@ OUTPUT_PATH = "data/processed/games_cleaned.csv"
 ```
 
 Do **not** use any other input or output path.
-
 The script should read the input CSV using:
 
 ```python
@@ -44,7 +41,6 @@ df.to_csv(OUTPUT_PATH, index=False)
 # Required Processing Steps
 
 The generated Python code must perform **all** of the following steps, in the specified order.
-
 Do not omit, simplify, replace, or reinterpret any of these transformations.
 
 ---
@@ -74,7 +70,6 @@ data/raw/games.csv
 ```
 
 using Pandas and `escapechar='\\'`.
-
 Store the raw DataFrame in:
 
 ```python
@@ -97,7 +92,6 @@ df_raw = pd.read_csv(
 ## 3. Parse the `price_overview` Column
 
 The `price_overview` column contains JSON-like strings that need to be parsed.
-
 Create a function called:
 
 ```python
@@ -106,7 +100,6 @@ parse_price(x)
 ```
 
 with the following behavior:
-
 - If the value is missing (`NaN`) or an empty string, return an empty dictionary `{}`.
 - Otherwise, attempt to parse the value using `json.loads()`.
 - If parsing fails because of `json.JSONDecodeError` or `TypeError`, return `{}`.
@@ -165,7 +158,6 @@ price_
 ```
 
 to every generated price column.
-
 Equivalent logic:
 
 ```python
@@ -186,9 +178,7 @@ price_overview
 ```
 
 column from the raw dataset.
-
 Then concatenate the remaining raw columns with the normalized price DataFrame horizontally.
-
 The resulting DataFrame must be stored in:
 
 ```python
@@ -218,7 +208,6 @@ N
 ```
 
 Replace these values with `pd.NA`.
-
 Then convert the column to Pandas datetime using:
 
 ```python
@@ -230,7 +219,6 @@ pd.to_datetime(
 ```
 
 The resulting column must therefore contain proper datetime values where possible and `NaT` where conversion fails.
-
 Required logic:
 
 ```python
@@ -273,7 +261,6 @@ languages with full audio support
 ```
 
 The search must:
-
 - be case-insensitive
 - handle missing values safely
 
@@ -297,7 +284,6 @@ Clean the `languages` column using the following exact sequence of transformatio
 ### Step 1
 
 Remove everything starting from a `<br>` HTML tag through the end of the string.
-
 The regex must support both:
 
 ```text
@@ -464,11 +450,8 @@ df.loc[df['price_currency'] != 'EUR', cols] = np.nan
 ```
 
 This means that **all price-related information in those columns must be discarded for non-EUR currencies**.
-
 Do not convert currencies.
-
 Do not perform exchange-rate calculations.
-
 Do not attempt to infer missing currencies.
 
 ---
@@ -533,7 +516,6 @@ language_count
 based on the cleaned `languages` column.
 
 The calculation must:
-
 - split the string using a comma `,`
 - count the resulting list elements
 - return `0` when the value is not a list, such as when the language value is missing
@@ -580,11 +562,8 @@ If necessary, create the parent output directory before saving. Do not change th
 ## Reproducibility
 
 The generated Python script must be self-contained and executable from the project root.
-
 Do not assume that any variables from another script already exist.
-
 Do not rely on previously processed data.
-
 The script must always start from:
 
 ```text
@@ -602,7 +581,6 @@ data/processed/games_cleaned.csv
 ## Do Not Add Additional Transformations
 
 Do **not**:
-
 - remove additional columns
 - remove additional rows
 - rename existing columns
@@ -621,9 +599,7 @@ The goal is to reproduce the specified processing pipeline exactly.
 ## Code Quality
 
 The final response must contain the complete Python code and nothing that requires manual implementation.
-
 Use clear section comments so that each processing stage is easy to identify.
-
 The final script should be suitable for placing directly into a Python project, for example:
 
 ```text
@@ -675,7 +651,6 @@ df_raw = pd.read_csv(
     escapechar='\\'
 )
 
-
 # =============================================================================
 # 3. PARSE PRICE JSON
 # =============================================================================
@@ -692,14 +667,12 @@ def parse_price(x):
 
 price_data = df_raw['price_overview'].apply(parse_price)
 
-
 # =============================================================================
 # 4. NORMALIZE PRICE JSON DATA
 # =============================================================================
 
 price_df = pd.json_normalize(price_data)
 price_df = price_df.add_prefix('price_')
-
 
 # =============================================================================
 # 5. COMBINE PRICE DATA WITH ORIGINAL DATASET
@@ -709,7 +682,6 @@ df = pd.concat(
     [df_raw.drop(columns='price_overview'), price_df],
     axis=1
 )
-
 
 # =============================================================================
 # 6. CLEAN AND CONVERT RELEASE DATE
@@ -721,13 +693,11 @@ df['release_date'] = pd.to_datetime(
     errors='coerce'
 )
 
-
 # =============================================================================
 # 7. CONVERT IS_FREE TO BOOLEAN
 # =============================================================================
 
 df["is_free"] = df["is_free"].astype(bool)
-
 
 # =============================================================================
 # 8. CREATE FULL_AUDIO_SUPPORT
@@ -738,7 +708,6 @@ df["full_audio_support"] = df["languages"].str.contains(
     case=False,
     na=False
 )
-
 
 # =============================================================================
 # 9. CLEAN LANGUAGES COLUMN
@@ -755,7 +724,6 @@ df["languages"] = (
 
 df["languages"] = df["languages"].replace("N", np.nan)
 
-
 # =============================================================================
 # 10. REMOVE TWO SPECIFIC INVALID GAME ENTRIES
 # =============================================================================
@@ -766,7 +734,6 @@ names_to_drop = [
 ]
 
 df = df[~df["name"].isin(names_to_drop)]
-
 
 # =============================================================================
 # 11. KEEP PRICE DATA ONLY FOR EUR
@@ -785,13 +752,11 @@ cols = [
 
 df.loc[df['price_currency'] != 'EUR', cols] = np.nan
 
-
 # =============================================================================
 # 12. CREATE HAS_RECURRING_SUBSCRIPTION
 # =============================================================================
 
 df["has_recurring_subscription"] = df["price_recurring_sub"].notna()
-
 
 # =============================================================================
 # 13. CREATE HAS_DISCOUNT
@@ -802,7 +767,6 @@ df["has_discount"] = (
     & (df["price_discount_percent"] != 0)
 )
 
-
 # =============================================================================
 # 14. CREATE LANGUAGE_COUNT
 # =============================================================================
@@ -812,7 +776,6 @@ df["language_count"] = (
     .str.split(",")
     .apply(lambda x: len(x) if isinstance(x, list) else 0)
 )
-
 
 # =============================================================================
 # 15. SAVE FINAL DATASET
