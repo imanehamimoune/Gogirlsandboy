@@ -1,0 +1,5 @@
+dimension,correlation_weight_vs_mean_abs_rank_change,correlation_weight_vs_spearman,min_weight,max_weight,baseline_weight
+Scale & Reach,0.05928001613831427,-0.05646733774563987,0.25,0.45,0.35
+Quality,0.0833466893568605,-0.09276023660798725,0.2,0.4,0.3
+Engagement,-0.31406742443687957,0.381061636375636,0.1,0.3,0.2
+Growth & Momentum,0.1714407189417049,-0.23183406202200885,0.05,0.25,0.15
