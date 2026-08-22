@@ -15,7 +15,7 @@ The generated code must be **fully executable as provided**.
 Use exactly these paths:
 
 ```python
-INPUT_PATH = "data/raw/games.csv"
+INPUT_PATH = "data/raw/games.zip"
 OUTPUT_PATH = "data/processed/games_cleaned.csv"
 
 ```
