@@ -2,7 +2,9 @@
 
 ## Analytical Objective
 
-The analysis aimed to identify and compare high-performing publishers using a multidimensional scoring framework. Rather than evaluating publisher performance using a single measure, publishers were assessed across four dimensions: **Scale & Reach, Quality, Engagement, and Growth & Momentum**.
+The analysis aimed to identify and compare high-performing publishers using a quantitative scoring framework. Publishers were assessed across four dimensions: **Scale & Reach, Quality, Engagement, and Growth & Momentum**.
+
+Scale & Reach captures the size and accessibility of a publisher's audience, while Quality represents how positively its games are received by players. Engagement complements these measures by capturing ongoing player activity rather than accumulated reach alone. Finally, Growth & Momentum reflects recent publishing activity and therefore provides an indication of current portfolio development rather than historical performance only. Together, the four dimensions gives us insight into a publisher's performance: market presence, product reception, player activity, and recent publishing activity.
 
 The analysis was conducted at the publisher level. Game-level information was aggregated into publisher-level features before the scoring procedure was applied. The resulting publisher scores were used to rank publishers according to their overall performance across the four dimensions.
 
@@ -75,7 +77,17 @@ The overall score was calculated as:
 
 `Overall Score = 0.35 × Scale & Reach + 0.30 × Quality + 0.20 × Engagement + 0.15 × Growth & Momentum`
 
-The scoring framework therefore placed the greatest emphasis on Scale & Reach and Quality, followed by Engagement and Growth & Momentum.
+### Weighting Rationale
+
+The four dimensions were assigned different weights according to their relative importance for identifying consistently high-performing publishers. **Scale & Reach received the highest weight (35%)** because the ability to reach a large player base provides an indication of a publisher's market presence and commercial scale. A publisher with substantial ownership and broad accessibility has demonstrated an ability to attract customers across a comparatively large market.
+
+**Quality received the second-highest weight (30%)** because commercial reach alone does not necessarily indicate sustainable performance. Positive player reception provides evidence that a publisher's games meet player expectations and can contribute to customer satisfaction, reputation, and longer-term trust in the publisher.
+
+**Engagement received a weight of 20%** to capture continued player activity after acquisition. This dimension complements Scale & Reach by distinguishing between games that have accumulated a large audience and games that continue to attract active players. It therefore supports the objective of identifying publishers with sustained performance rather than those whose success is driven primarily by isolated releases.
+
+Finally, **Growth & Momentum received a weight of 15%** to incorporate recent publishing activity into the assessment. Although established and consistent performance was prioritized, recent activity provides additional information about whether a publisher continues to develop and expand its portfolio. The lower weight prevents recent activity from outweighing demonstrated historical performance while still rewarding publishers showing continued momentum.
+
+The resulting baseline weighting was therefore **35% Scale & Reach, 30% Quality, 20% Engagement, and 15% Growth & Momentum**. These weights represent an analytical judgment about the relative importance of the four dimensions rather than objectively determined values. A sensitivity analysis was consequently conducted to assess whether the resulting publisher rankings remained stable under alternative weighting assumptions.
 
 Missing dimension scores were not compensated for by redistributing their weights across the remaining dimensions. If any of the four required dimension scores was missing, the corresponding overall score was also treated as missing. This ensured that publishers were evaluated using the same scoring structure rather than being ranked using different effective weight combinations.
 
