@@ -464,7 +464,7 @@ ax.set_title("Top 10 Publishers by Overall Score", fontsize=13, fontweight="bold
 ax.set_xlim(0, top10["overall_score"].max() * 1.15)
 ax.spines[["top", "right"]].set_visible(False)
 plt.tight_layout()
-plt.savefig("plot1_top10_overall.png", dpi=150)
+plt.savefig("data/feature_analysis/publisher_score_plots/plot1_top10_overall.png", dpi=150)
 plt.close()
 
 # --- Plot 2: Acquisition candidates -- dimension scores (grouped, colored) -
@@ -494,7 +494,7 @@ ax.set_ylim(0, 1.15)
 ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.25), ncol=4, frameon=False)
 ax.spines[["top", "right"]].set_visible(False)
 plt.tight_layout()
-plt.savefig("plot2_top3_across_dimensions.png", dpi=150, bbox_inches="tight")
+plt.savefig("data/feature_analysis/publisher_score_plots/plot2_top3_across_dimensions.png", dpi=150, bbox_inches="tight")
 plt.close()
 
 # --- Plot 3: Top 10 per individual dimension (2x2 grid, solid green) -------
@@ -510,7 +510,7 @@ for ax, d in zip(axes.flat, DIMS):
     ax.spines[["top", "right"]].set_visible(False)
 fig.suptitle("Top 10 Publishers per Individual Dimension", fontsize=15, fontweight="bold", y=1.01)
 plt.tight_layout()
-plt.savefig("plot3_top10_per_dimension.png", dpi=150, bbox_inches="tight")
+plt.savefig("data/feature_analysis/publisher_score_plots/plot3_top10_per_dimension.png", dpi=150, bbox_inches="tight")
 plt.close()
 
 
@@ -520,11 +520,8 @@ plt.close()
 ## Role
 
 You are a senior Data Analyst and Python/Pandas expert specializing in scoring models, sensitivity analysis, ranking stability, and data visualization.
-
 Your task is to build and execute a **sensitivity analysis for an existing publisher scoring model**.
-
 The purpose is **not** to find a better weighting scheme or optimize the model.
-
 The purpose is to determine:
 
 > **How robust are the publisher scores and rankings to reasonable changes in the four top-level dimension weights?**
@@ -532,7 +529,6 @@ The purpose is to determine:
 The existing feature engineering and scoring methodology are already defined and must be treated as the baseline model.
 
 Prioritize:
-
 - methodological correctness
 - transparency
 - reproducibility
@@ -603,7 +599,6 @@ The existing `publisher_scores.csv` should be used as a **baseline validation/re
 # 2. Important Principle
 
 The existing pipeline has two distinct stages:
-
 1. `publisher_features.csv`
    - publisher-level aggregated features
    - normalized features
@@ -615,20 +610,17 @@ The existing pipeline has two distinct stages:
    - produced by the existing scoring model
 
 The sensitivity analysis sits **after the feature-engineering stage**.
-
 Therefore:
 
 ### Do not redo feature engineering.
 
 Do not:
-
 - reaggregate game-level data
 - change publisher filtering
 - change normalization
 - change the recent-release definition
 - change the handling of missing values
 - change the feature definitions
-
 The sensitivity analysis must use the existing `publisher_features.csv` exactly as produced.
 
 ---
@@ -636,7 +628,6 @@ The sensitivity analysis must use the existing `publisher_features.csv` exactly 
 # 3. Existing Scoring Model
 
 The existing scoring model contains four dimensions.
-
 The baseline top-level weights are:
 
 | DimensionBaseline weight |          |
@@ -698,7 +689,6 @@ The existing scoring model creates `review_score_norm` by min-max scaling `revie
 ```
 
 This normalization is performed only for the scoring calculation.
-
 Do not modify the original `review_score` column in `publisher_features.csv`.
 
 Calculate:
@@ -856,7 +846,6 @@ Compare:
 Use a reasonable floating-point tolerance when comparing numerical scores.
 
 The validation should explicitly report:
-
 - whether publisher populations match
 - whether dimension scores match
 - whether overall scores match
@@ -865,7 +854,6 @@ The validation should explicitly report:
 - the maximum numerical difference
 
 If discrepancies occur:
-
 1. investigate them
 2. report them clearly
 3. do not silently ignore them
@@ -922,7 +910,6 @@ Growth & Momentum:
 # 9. Valid Scenario Constraint
 
 Generate all combinations within the ranges above.
-
 Then retain **only combinations whose four weights sum to exactly 100%**.
 
 For example:
@@ -954,9 +941,7 @@ must not be included because:
 ```
 
 Do not manually select scenarios.
-
 The scenario-generation logic must be programmatic.
-
 The baseline must occur **exactly once**.
 
 Report:
@@ -1002,7 +987,6 @@ Also store the four weights with every scenario.
 # 11. Scenario Calculation
 
 For every valid scenario:
-
 1. Keep the four dimension scores fixed.
 2. Apply the scenario's four top-level weights.
 3. Calculate the scenario overall score.
@@ -1011,7 +995,6 @@ For every valid scenario:
 6. Store the scenario weights.
 
 The dimension scores must **not** be recalculated differently for different scenarios.
-
 Only the top-level weighting changes.
 
 Conceptually:
@@ -1032,16 +1015,13 @@ scenario_score =
 Preserve the existing model's missing-value behavior.
 
 Do not:
-
 - replace missing values with zero
 - silently reweight the remaining dimensions
 - fabricate scores
 - drop publishers because of missing dimension scores
 
 If any dimension score is missing for a publisher, the resulting overall score should remain missing.
-
 Maintain the same publisher population across scenarios.
-
 Report publishers with missing overall scores separately.
 
 ---
@@ -1056,7 +1036,6 @@ rank(method="min", ascending=False)
 ```
 
 Ties must therefore receive the same rank.
-
 Keep the ranking methodology consistent across all scenarios.
 
 ---
@@ -1086,7 +1065,6 @@ absolute_rank_change =
 ```
 
 Interpretation:
-
 - negative = publisher moved upward
 - positive = publisher moved downward
 - zero = unchanged
@@ -1132,7 +1110,6 @@ scenario ranking
 Use the publisher population for which rankings are available.
 
 Interpretation:
-
 - close to 1 → rankings are very similar
 - lower values → rankings differ more substantially
 
@@ -1189,7 +1166,6 @@ top_10_overlap =
 ```
 
 Do this for Top 5, Top 10, and Top 20.
-
 This is important because a ranking can have a high overall Spearman correlation while still changing materially at the very top.
 
 ---
@@ -1230,7 +1206,6 @@ This allows identification of:
 ### Stable publishers
 
 Publishers with:
-
 - small rank range
 - small score range
 - high Top-N frequency
@@ -1238,7 +1213,6 @@ Publishers with:
 ### Sensitive publishers
 
 Publishers with:
-
 - large rank range
 - large score range
 - large mean absolute rank change
@@ -1294,9 +1268,7 @@ This gives a systematic measure of how far a scenario is from the baseline assum
 # 20. Dimension-Level Sensitivity
 
 In addition to the complete scenario grid, determine which dimension appears to have the greatest influence on ranking changes.
-
 Use the existing valid scenarios to evaluate this rather than changing internal sub-weights.
-
 Analyze the relationship between each dimension's top-level weight and:
 
 ```text
@@ -1321,14 +1293,12 @@ Scale & Reach weight
 is systematically associated with larger or smaller ranking changes.
 
 Repeat for:
-
 - Scale & Reach
 - Quality
 - Engagement
 - Growth & Momentum
 
 Do not claim causality merely from correlation.
-
 Describe this as an indication of which dimension's weighting is associated with greater ranking sensitivity.
 
 ---
@@ -1361,9 +1331,7 @@ Increase Engagement by 10 percentage points.
 ### Growth & Momentum emphasis
 
 Increase Growth & Momentum by 10 percentage points.
-
 The redistribution rule must be defined **before examining results**.
-
 Prefer a proportional redistribution of the other three baseline weights so that:
 
 ```text
@@ -1373,7 +1341,6 @@ sum = 100%
 ```
 
 Document the rule in the code.
-
 These representative scenarios are for interpretation only; the full 5-point grid remains the main sensitivity analysis.
 
 ---
@@ -1381,7 +1348,6 @@ These representative scenarios are for interpretation only; the full 5-point gri
 # 22. Visualizations
 
 Create clear and readable visualizations using:
-
 - pandas
 - numpy
 - matplotlib
@@ -1404,14 +1370,12 @@ Do not overwrite unrelated existing files.
 # 23. Required Plot 1 — Scenario Weight Distribution
 
 Show the distribution of tested weights for:
-
 - Scale & Reach
 - Quality
 - Engagement
 - Growth & Momentum
 
 The purpose is to make the tested sensitivity range immediately understandable.
-
 Clearly indicate the baseline values.
 
 ---
@@ -1428,7 +1392,6 @@ absolute rank change
 across publishers and scenarios.
 
 A boxplot is appropriate.
-
 The plot should communicate how much publisher rankings typically move under alternative weighting assumptions.
 
 ---
@@ -1444,9 +1407,7 @@ y = Spearman correlation with baseline
 ```
 
 Each point represents a scenario.
-
 Highlight the baseline scenario.
-
 This shows whether increasingly different weighting assumptions actually result in increasingly different rankings.
 
 ---
@@ -1456,7 +1417,6 @@ This shows whether increasingly different weighting assumptions actually result 
 Visualize Top-N stability across scenarios.
 
 At minimum show:
-
 - Top 5 overlap
 - Top 10 overlap
 - Top 20 overlap
@@ -1464,7 +1424,6 @@ At minimum show:
 Use an appropriate line or distribution plot.
 
 The goal is to answer:
-
 > How much of the baseline Top 5/10/20 remains under alternative weighting assumptions?
 
 ---
@@ -1472,11 +1431,8 @@ The goal is to answer:
 # 27. Required Plot 5 — Publisher Top-10 Frequency
 
 Show the publishers that appear in the Top 10 most frequently.
-
 Focus on publishers with meaningful Top-10 frequency.
-
 Sort from most stable to least stable.
-
 Do not create an unreadable plot containing every publisher.
 
 ---
@@ -1505,9 +1461,7 @@ rather than selecting publishers after examining the results.
 # 29. Required Plot 7 — Rank Sensitivity Heatmap
 
 Create a heatmap showing publisher ranks across representative scenarios.
-
 Use the baseline Top 10 or Top 20 publishers.
-
 The purpose is to visually show which highly ranked publishers are stable and which move substantially.
 
 ---
@@ -1522,7 +1476,6 @@ mean_absolute_rank_change
 ```
 
 This should help identify which dimension's weighting is most strongly associated with ranking changes.
-
 Clearly state that this is an association within the tested scenario grid, not a causal estimate.
 
 ---
@@ -1554,7 +1507,6 @@ Perform explicit validation before considering the analysis complete.
 ## Input validation
 
 Confirm:
-
 - `publisher_features.csv` loads successfully
 - expected columns exist
 - publisher count is correct
@@ -1566,7 +1518,6 @@ Confirm:
 ## Dimension validation
 
 Confirm:
-
 - Scale & Reach scores are within [0,1]
 - Quality scores are within [0,1]
 - Engagement scores are within [0,1]
@@ -1579,7 +1530,6 @@ where values are non-NaN.
 ## Scenario validation
 
 Confirm:
-
 - every scenario contains exactly four weights
 - every weight is within its predefined range
 - every scenario sums to exactly 1.0
@@ -1592,7 +1542,6 @@ Confirm:
 ## Result validation
 
 Confirm:
-
 - no duplicate publisher/scenario combinations
 - scenario score values are within [0,1] where non-NaN
 - rankings are correctly ordered
@@ -1796,7 +1745,6 @@ Do not bury important assumptions inside calculation logic.
 The analysis must be completely reproducible.
 
 Do not:
-
 - manually select scenarios after seeing results
 - manually select publishers because they look interesting
 - optimize the weighting scheme
@@ -1826,11 +1774,9 @@ How stable are the Top 5, Top 10, and Top 20?
 ## Dimension sensitivity
 
 Which dimension's top-level weight is most strongly associated with ranking changes?
-
 Do not treat these as interchangeable.
 
 A model can have:
-
 - relatively large score changes
 - but very stable rankings
 
@@ -1846,11 +1792,8 @@ Interpret these separately.
 # 37. Important Statistical Interpretation
 
 Do not conclude that a weighting dimension **causes** ranking instability merely because its weight correlates with rank changes.
-
 The scenario grid changes several weights simultaneously because they must sum to 100%.
-
 Therefore, dimension-level results should be described as:
-
 > "associated with ranking sensitivity within the tested scenario space"
 
 rather than:
@@ -1866,7 +1809,6 @@ After executing the analysis, provide a concise but evidence-based report.
 ## Dataset
 
 Report:
-
 - number of publishers
 - number of candidate weight combinations
 - number of valid scenarios
@@ -1877,7 +1819,6 @@ Report:
 ## Baseline
 
 Report:
-
 - baseline weights
 - baseline Top 10
 - baseline score distribution
@@ -1888,7 +1829,6 @@ Report:
 ## Overall Ranking Stability
 
 Report:
-
 - mean absolute rank change across scenarios
 - minimum and maximum Spearman correlation
 - median Spearman correlation
@@ -1899,7 +1839,6 @@ Report:
 ## Top-N Robustness
 
 Report:
-
 - Top 5 overlap statistics
 - Top 10 overlap statistics
 - Top 20 overlap statistics
@@ -1911,7 +1850,6 @@ Explain whether the most highly ranked publishers remain stable.
 ## Most Stable Publishers
 
 Identify publishers based on:
-
 - small rank range
 - small score range
 - high Top-10 frequency
@@ -1921,7 +1859,6 @@ Identify publishers based on:
 ## Most Sensitive Publishers
 
 Identify publishers based on:
-
 - large rank range
 - large score range
 - large mean absolute rank change
@@ -1932,7 +1869,6 @@ Identify publishers based on:
 ## Dimension Sensitivity
 
 Identify which dimension's weighting is most strongly associated with ranking changes within the tested scenario grid.
-
 Support this with the calculated statistics.
 
 ---
@@ -1944,7 +1880,6 @@ Explicitly answer:
 > **Is the baseline 35% Scale & Reach / 30% Quality / 20% Engagement / 15% Growth & Momentum weighting reasonably robust to plausible alternative top-level weightings?**
 
 The answer must be based on quantitative evidence from:
-
 - rank changes
 - Spearman correlations
 - Top-N overlap
@@ -1956,11 +1891,9 @@ Do not simply state:
 > "The model is robust."
 
 Instead explain **why** the evidence supports or does not support that conclusion.
-
 If the results show mixed evidence, explicitly say so.
 
 For example, distinguish between:
-
 - robust overall ranking
 - unstable individual publishers
 - stable Top 5 but less stable Top 20
@@ -1971,7 +1904,6 @@ For example, distinguish between:
 # 40. Final Deliverable
 
 Return:
-
 1. The complete executable Python code.
 2. The scenario-generation methodology.
 3. The exact number of valid scenarios generated.
@@ -2013,7 +1945,6 @@ and uses publisher_scores.csv only as a validation/reference file.
 # =============================================================================
 from pathlib import Path
 import itertools
-import math
 import warnings
 
 import numpy as np
