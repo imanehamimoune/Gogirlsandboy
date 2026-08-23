@@ -2326,12 +2326,10 @@ if reference_exists:
                 "does not match publisher_scores.csv."
             )
             print(
-                "The supplied build_publisher_scores.py explicitly defines "
-                "'recent_release_count_norm' for this component, but the supplied "
-                "publisher_scores.csv is numerically consistent with "
-                "'game_count_norm' instead. The sensitivity analysis therefore "
-                "follows the methodology specified in this sensitivity prompt "
-                "and treats publisher_scores.csv strictly as a reference/validation file."
+                "The sensitivity analysis follows the current scoring methodology "
+                "using recent_release_ratio and recent_release_count_norm. "
+                "The existing publisher_scores.csv should be regenerated or "
+                "investigated before being used as the baseline reference."
             )
 else:
     print("publisher_scores.csv not found; baseline reference validation skipped.")
