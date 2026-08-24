@@ -70,7 +70,7 @@ import pandas as pd
 pd.set_option("display.width", 140)
 
 SRC_MASTER = "data/processed/master_dataset.csv"
-OUT_PUBLISHER_FEATURES = "data/feature_analysis/publisher_features.csv"
+OUT_PUBLISHER_FEATURES = "data/analysis/publisher_features.csv"
 
 MIN_GAMES = 10
 RECENT_YEARS = 2

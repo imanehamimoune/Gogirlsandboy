@@ -61,8 +61,8 @@ import matplotlib.pyplot as plt
 
 pd.set_option("display.width", 140)
 
-SRC_PUBLISHER_FEATURES = "data/feature_analysis/publisher_features.csv"
-OUT_PUBLISHER_SCORES = "data/feature_analysis/publisher_scores.csv"
+SRC_PUBLISHER_FEATURES = "data/analysis/publisher_features.csv"
+OUT_PUBLISHER_SCORES = "data/analysis/publisher_scores.csv"
 
 # =============================================================================
 # TASK 1: LOAD

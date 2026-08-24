@@ -340,8 +340,8 @@ import matplotlib.pyplot as plt
 # 1. CONFIGURATION
 # =============================================================================
 
-INPUT_PATH = Path("data/feature_analysis/publisher_scores.csv")
-OUTPUT_DIR = Path("data/feature_analysis/sensitivity_plots")
+INPUT_PATH = Path("data/analysis/publisher_scores.csv")
+OUTPUT_DIR = Path("data/analysis/sensitivity_plots")
 OUTPUT_PATH = OUTPUT_DIR / "publisher_score_sensitivity.png"
 
 PUBLISHER_COLUMN = "publisher_primary"
