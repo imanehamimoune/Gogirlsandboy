@@ -54,6 +54,9 @@ import pandas as pd
 import json
 import numpy as np
 
+SRC = "data/raw/games.zip"
+OUT = "data/processed/games.csv"
+
 ```
 
 You may additionally import `os` or `pathlib.Path` if needed to create the output directory, but the core processing logic must remain unchanged.

@@ -1,4 +1,7 @@
 """
+
+PROMPT
+
 ## Role
 
 You are a data analyst working with Python and pandas. Your responsibility is to assess the quality of a dataset before any cleaning or preprocessing is performed.
@@ -75,7 +78,8 @@ from bs4 import BeautifulSoup
 
 # ==== 2. CONFIGURATION =====
 
-FILE_PATH = "data/raw/descriptions.zip"
+SRC = "data/raw/descriptions.zip"
+OUT = "data/processed/descriptions_cleaned.zip"
 TEXT_COLUMNS = ["summary", "extensive", "about"]
 
 # ==== 3. FUNCTIONS =====
@@ -147,7 +151,7 @@ def data_quality_report(df, text_columns):
 
 # ===== 4. LOAD RAW DATA =====
 
-df = pd.read_csv(FILE_PATH, escapechar="\\")
+df = pd.read_csv(SRC, escapechar="\\")
 
 print(f"Loaded {len(df):,} rows.")
 
@@ -169,7 +173,7 @@ for col in TEXT_COLUMNS:
 # ===== 7. SAVE DATA INTO CSV =====
 
 df_processed.to_csv(
-    "data/processed/descriptions_cleaned.zip",
+    OUT,
     index=False,
     compression={
         "method": "zip",
