@@ -1,6 +1,8 @@
 ''' PART 1: BUILDING PUBLISHER FEATURES '''
 
 '''
+PROMPT
+
 Role: You are a senior Data Engineer and Analyst with strong Python/Pandas expertise, building a publisher-level feature table from game-level data. Prioritize correct, well-justified aggregation and normalization over cleverness.
 Context: Input is master_dataset.csv — one row per app_id, already merged and cleaned. The next step is to aggregate this to one row per publisher_primary, producing a small set of features usable for ranking/scoring publishers. Some of these features are already naturally bounded ratios; others are raw counts/rates that need normalization before they can be compared or combined meaningfully.
 
@@ -67,15 +69,15 @@ import pandas as pd
 
 pd.set_option("display.width", 140)
 
-SRC = "data/processed/master_dataset.csv"
-OUT = "data/feature_analysis/publisher_features.csv"
+SRC_MASTER = "data/processed/master_dataset.csv"
+OUT_PUBLISHER_FEATURES = "data/feature_analysis/publisher_features.csv"
 MIN_GAMES = 10
 RECENT_YEARS = 2
 
 # =============================================================================
 # TASK 1: LOAD
 # =============================================================================
-df = pd.read_csv(SRC, low_memory=False)
+df = pd.read_csv(SRC_MASTER, low_memory=False)
 print("=" * 70)
 print("TASK 1: LOAD")
 print("=" * 70)
@@ -219,8 +221,8 @@ print("\nmissing % per column:")
 missingness = (publisher_features.isna().mean() * 100).round(2)
 print(missingness.to_string())
 
-publisher_features.to_csv(OUT, index=False)
-print(f"\nSaved: {OUT}  shape={publisher_features.shape}")
+publisher_features.to_csv(OUT_PUBLISHER_FEATURES, index=False)
+print(f"\nSaved: {OUT_PUBLISHER_FEATURES}  shape={publisher_features.shape}")
 
 # =============================================================================
 # TASK 7: DELIVER (short summary)
@@ -243,7 +245,10 @@ print(publisher_features.nlargest(10, "review_score")[["publisher_primary", "gam
 
 
 ''' PART 2: EVALUATING PUBLISHER SCORES '''
+
 '''
+PROMPT
+
 Role: You are a senior Data Engineer and Analyst with strong Python/Pandas expertise, building a weighted scoring and ranking layer on top of an existing publisher-level feature table. Prioritize transparency and easy adjustability of every weight/assumption over cleverness.
 Context: Input is publisher_features.csv — one row per publisher_primary, already aggregated and normalized (contains raw features like review_score, avg_owners_mid, avg_language_count, avg_positive_review_ratio, avg_active_users_rate, recent_release_ratio, game_count, recent_release_count, plus their _norm counterparts where applicable). The next step is to combine these into 4 weighted dimension scores and one overall weighted score, then rank publishers by it.
 
@@ -301,13 +306,13 @@ import matplotlib.pyplot as plt
 
 pd.set_option("display.width", 140)
 
-SRC = "data/feature_analysis/publisher_features.csv"
-OUT = "data/feature_analysis/publisher_scores.csv"
+SRC_PUBLISHER_FEATURES = OUT_PUBLISHER_FEATURES
+OUT_PUBLISHER_SCORES = "data/feature_analysis/publisher_scores.csv"
 
 # =============================================================================
 # TASK 1: LOAD
 # =============================================================================
-df = pd.read_csv(SRC, low_memory=False)
+df = pd.read_csv(SRC_PUBLISHER_FEATURES, low_memory=False)
 print("=" * 70)
 print("TASK 1: LOAD")
 print("=" * 70)
@@ -426,8 +431,8 @@ print(f"NaN overall_score count matches TASK 5 report: {df['overall_score'].isna
 # SAVE
 # =============================================================================
 final_cols = ["rank", "publisher_primary", "game_count"] + DIMS + ["overall_score"]
-df[final_cols].to_csv(OUT, index=False)
-print(f"\nSaved: {OUT}  shape={df[final_cols].shape}")
+df[final_cols].to_csv(OUT_PUBLISHER_SCORES, index=False)
+print(f"\nSaved: {OUT_PUBLISHER_SCORES}  shape={df[final_cols].shape}")
 
 # =============================================================================
 # TASK 8: DELIVER (short summary)
