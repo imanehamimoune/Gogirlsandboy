@@ -213,7 +213,7 @@ Top 10 by overall_score — horizontal bar chart, solid green, ranked descending
 Top 3 acquisition candidates vs. Xbox — dimension breakdown — grouped vertical bar chart. Take the top 3 publishers by overall_score (excluding PlayStation Publishing LLC), plus Xbox Game Studios fixed in as a reference point regardless of its own rank. Show all 4 dimension scores side-by-side per publisher, each dimension a different color, values labeled above each bar.
 Top 10 per individual dimension — 2×2 grid, one panel per dimension, each independently showing its own top 10 publishers (not the overall top 10) as solid-green horizontal bars, value-labeled.
 
-Save the output in data/feature_analysis/publisher_score_plots/ as plot1_top10_overall.png, plot2_top3_acquisition_candidates.png, and plot3_top10_per_dimension.png respectively. Use a consistent color scheme for the 4 dimensions across all plots, and ensure all text is legible (font size, rotation, etc.).
+Save the output in data/analysis/publisher_score_plots/ as plot1_top10_overall.png, plot2_top3_acquisition_candidates.png, and plot3_top10_per_dimension.png respectively. Use a consistent color scheme for the 4 dimensions across all plots, and ensure all text is legible (font size, rotation, etc.).
 '''
 # Request: 2026-08-20 22:53 CET.
 # Author: Anna Andruszkiewicz (prompt and adjustments), Claude (code)
@@ -239,7 +239,7 @@ ax.set_title("Top 10 Publishers by Overall Score", fontsize=13, fontweight="bold
 ax.set_xlim(0, top10["overall_score"].max() * 1.15)
 ax.spines[["top", "right"]].set_visible(False)
 plt.tight_layout()
-plt.savefig("data/feature_analysis/publisher_score_plots/plot1_top10_overall.png", dpi=150)
+plt.savefig("data/analysis/publisher_score_plots/plot1_top10_overall.png", dpi=150)
 plt.close()
 
 # --- Plot 2: Acquisition candidates -- dimension scores (grouped, colored) -
@@ -269,7 +269,7 @@ ax.set_ylim(0, 1.15)
 ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.25), ncol=4, frameon=False)
 ax.spines[["top", "right"]].set_visible(False)
 plt.tight_layout()
-plt.savefig("data/feature_analysis/publisher_score_plots/plot2_top3_across_dimensions.png", dpi=150, bbox_inches="tight")
+plt.savefig("data/analysis/publisher_score_plots/plot2_top3_across_dimensions.png", dpi=150, bbox_inches="tight")
 plt.close()
 
 # --- Plot 3: Top 10 per individual dimension (2x2 grid, solid green) -------
@@ -285,5 +285,5 @@ for ax, d in zip(axes.flat, DIMS):
     ax.spines[["top", "right"]].set_visible(False)
 fig.suptitle("Top 10 Publishers per Individual Dimension", fontsize=15, fontweight="bold", y=1.01)
 plt.tight_layout()
-plt.savefig("data/feature_analysis/publisher_score_plots/plot3_top10_per_dimension.png", dpi=150, bbox_inches="tight")
+plt.savefig("data/analysis/publisher_score_plots/plot3_top10_per_dimension.png", dpi=150, bbox_inches="tight")
 plt.close()
