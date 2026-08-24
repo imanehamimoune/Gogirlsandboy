@@ -1,4 +1,6 @@
 """
+PROMPT
+
 ## Role
 
 You are a data analyst working with Python, pandas, and NumPy. Your task is to clean and standardize a raw SteamSpy dataset while preserving useful information and creating analysis-ready features.
@@ -204,6 +206,9 @@ from __future__ import annotations
 import re
 import numpy as np
 import pandas as pd
+
+SRC = "data/raw/steamspy_insights.zip"
+OUT="data/processed/steamspy_insights_cleaned.csv"
  
 RAW_DTYPES = {"app_id": "int64"}
  
@@ -455,11 +460,11 @@ def clean_steamspy(path: str) -> tuple[pd.DataFrame, dict]:
 if __name__ == "__main__":
     import sys
  
-    src = sys.argv[1] if len(sys.argv) > 1 else "data/raw/steamspy_insights.zip"
+    src = sys.argv[1] if len(sys.argv) > 1 else SRC
     frame, rep = clean_steamspy(src)
     for k, v in rep.items():
         print(f"{k:<28} {v}")
     print()
     print(frame.dtypes)
 
-    frame.to_csv("data/processed/steamspy_insights_cleaned.csv", index=False)
+    frame.to_csv(OUT, index=False)

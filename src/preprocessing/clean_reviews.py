@@ -1,13 +1,19 @@
 r"""
+
+PROMPT
+
 Role:
 You are a senior Data Engineer and Data Analyst with strong Python/Pandas expertise,
 focused on cleaning messy real-world datasets without overcomplicating the solution.
+
 Context:
 You will receive a CSV file (Steam game reviews export) with known issues: non-standard
 CSV escaping, placeholder nulls, redundant columns, and unstructured text fields.
+
 Objective:
 Produce a reliable, analysis-ready version of the dataset using simple, clean code —
 without losing, inventing, or distorting information.
+
 Tasks:
 1. Load and inspect
    - Parse the CSV correctly (note: backslash-escaped quotes inside the reviews
@@ -40,6 +46,7 @@ Tasks:
      review_score in range, no duplicate app_ids.
 6. Deliver
    - The code to clean the data with description of what was dropped/flagged/transformed and why.
+
 Constraints (Do Not):
 - Don't overwrite the source file.
 - Don't drop rows just for having missing values.
@@ -48,6 +55,7 @@ Constraints (Do Not):
 - Don't invent data or silently discard columns.
 - Don't claim the output exists unless the code actually ran successfully.
 - Don't overengineer — no unnecessary complexity, config layers, or premature generalization.
+
 Expected Output:
 -code generating a cleaned reviews csv file
 """
@@ -59,8 +67,11 @@ import pandas as pd
 import re
 import html
 
+SRC="data/raw/reviews.zip"
+OUT="data/processed/reviews_cleaned.csv"
+
 # 1. LOAD — backslash-escaped quotes inside `reviews` break the default C parser
-reviews = pd.read_csv('data/raw/reviews.zip', escapechar='\\', engine='python')
+reviews = pd.read_csv(SRC, escapechar='\\', engine='python')
 
 # 2. NORMALIZE PLACEHOLDER NULLS ('\N' truncates to the string 'N' after parsing)
 numeric_like_cols = ['review_score', 'positive', 'negative', 'total', 'metacritic_score',
@@ -120,17 +131,17 @@ assert reviews['app_id'].duplicated().sum() == 0
 assert reviews.duplicated().sum() == 0
 
 # 9. SAVE — never touch the original file
-reviews.to_csv('data/processed/reviews_cleaned.csv', index=False)
+reviews.to_csv(OUT, index=False)
 
 # 10. VALIDATE THE ACTUAL OUTPUT
-check = pd.read_csv('data/processed/reviews_cleaned.csv')
+check = pd.read_csv(OUT)
 assert len(check) == len(reviews)
 assert check['app_id'].duplicated().sum() == 0
 assert check.duplicated().sum() == 0
 assert check['review_score'].between(0, 9).all()
 assert not check.astype(str).eq(r'\N').any().any()
 
-print(f"Created: reviews_cleaned.csv")
+print(f"Created: {OUT}")
 print(f"Shape: {check.shape}")
 print(check.dtypes)
 print(check.isna().sum())

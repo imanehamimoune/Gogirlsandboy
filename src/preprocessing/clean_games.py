@@ -1,9 +1,15 @@
+# Log: 2026-08-19 19:48 CET.
+# Author: Christian Beemelmann (code)
+
 import pandas as pd
 import json
 import numpy as np
 
+SRC = "data/raw/games.zip"
+OUT = "data/processed/games.csv"
+
 df_raw = pd.read_csv(
-    'data/raw/games.zip',
+    SRC,
     escapechar='\\'
 )
 
@@ -79,4 +85,4 @@ df["language_count"] = (
     .apply(lambda x: len(x) if isinstance(x, list) else 0)
 )
 
-df.to_csv('data/processed/games.csv', index=False)
+df.to_csv(OUT, index=False)
