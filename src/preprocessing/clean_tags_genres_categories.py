@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Aug 20 17:49:03 2026
-
-@author: lqn21
-"""
-
 """
 # ====================================================================
 # PROMPT
@@ -59,8 +52,8 @@ Follow-up Adjustments:
 - For genres and categories, also calculate the Top 5 values by number of unique
   games and the percentage of games represented by each after cleaning.
 
-Request: Clean the three CSV datasets according to the rules above.
-Author: Tung-Jui Lin (Prompt and Adjustments)
+Request: 20.08.2016 17:49:03 CET
+Author: Tung-Jui Lin (Prompt and Adjustments), ChatGPT (Code Generation)
 """
 
 import pandas as pd
@@ -72,8 +65,10 @@ import pandas as pd
 # =====================================================
 # 1. LOAD DATA
 # =====================================================
+SCR_TAGS = "data/raw/tags.zip"
+OUT_TAGS = "data/processed/tags_cleaned.csv"
 
-tags = pd.read_csv("data/raw/tags.zip")
+tags = pd.read_csv(SCR_TAGS)
 
 original_rows = len(tags)
 
@@ -198,7 +193,7 @@ print("Rows removed:", original_rows - len(tags))
 # 8. EXPORT CLEANED DATA
 # =====================================================
 
-tags.to_csv("data/processed/tags_cleaned.csv", index=False)
+tags.to_csv(OUT_TAGS, index=False)
 
 print("\nTags data cleaning completed successfully.")
 
@@ -216,7 +211,10 @@ print("\nTags data cleaning completed successfully.")
 # 1. LOAD DATA
 # =====================================================
 
-genres = pd.read_csv("data/raw/genres.zip")
+SRC_GENRES = "data/raw/genres.zip"
+OUT_GENRES = "data/processed/genres_cleaned.csv"
+
+genres = pd.read_csv(SRC_GENRES)
 
 original_rows = len(genres)
 
@@ -468,7 +466,7 @@ print("Rows removed:", original_rows - len(genres))
 # 10. EXPORT CLEANED DATA
 # =====================================================
 
-genres.to_csv("data/processed/genres_cleaned.csv", index=False)
+genres.to_csv(OUT_GENRES, index=False)
 
 print("\nGenres data cleaning completed successfully.")
 
@@ -523,8 +521,10 @@ print(top5_genres_game_pct)
 # =====================================================
 # 1. LOAD DATA
 # =====================================================
+SRC_CATEGORIES = "data/raw/categories.zip"
+OUT_CATEGORIES = "data/processed/categories_cleaned.csv"
 
-categories = pd.read_csv("data/raw/categories.zip")
+categories = pd.read_csv(SRC_CATEGORIES)
 
 original_rows = len(categories)
 
@@ -1068,7 +1068,7 @@ print("Rows removed:", original_rows - len(categories))
 # 11. EXPORT CLEANED DATA
 # =====================================================
 
-categories.to_csv("data/processed/categories_cleaned.csv", index=False)
+categories.to_csv(OUT_CATEGORIES, index=False)
 
 print("\nCategories data cleaning completed successfully.")
 
@@ -1136,9 +1136,14 @@ import pandas as pd
 # ---------------------------------------------------------------------------
 # 1. LOAD + VERIFY (each file already collapsed to one row per app_id)
 # ---------------------------------------------------------------------------
-tags = pd.read_csv("data/processed/tags_cleaned.csv")
-categories = pd.read_csv("data/processed/categories_cleaned.csv")
-genres = pd.read_csv("data/processed/genres_cleaned.csv")
+SCR_TAGS_MERGE = OUT_TAGS
+SCR_CATEGORIES_MERGE = OUT_CATEGORIES
+SCR_GENRES_MERGE = OUT_GENRES
+OUT_MERGE="data/processed/categories_tags_genres_merged.csv"
+
+tags = pd.read_csv(SCR_TAGS_MERGE)
+categories = pd.read_csv(SCR_CATEGORIES_MERGE)
+genres = pd.read_csv(SCR_GENRES_MERGE)
 
 for name, df in [("tags", tags), ("categories", categories), ("genres", genres)]:
     dup_count = df["app_id"].duplicated().sum()
@@ -1165,5 +1170,5 @@ for name, df in [("tags", tags), ("categories", categories), ("genres", genres)]
 # ---------------------------------------------------------------------------
 # 4. SAVE
 # ---------------------------------------------------------------------------
-merged.to_csv("data/processed/categories_tags_genres_merged.csv", index=False)
-print(f"\nSaved: data/processed/categories_tags_genres_merged.csv  shape={merged.shape}")
+merged.to_csv(OUT_MERGE, index=False)
+print(f"\nSaved: {OUT_MERGE}  shape={merged.shape}")

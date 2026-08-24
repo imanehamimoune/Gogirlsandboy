@@ -1,4 +1,6 @@
 '''
+PROMPT
+
 Role: You are a senior Data Engineer and Data Analyst with strong Python/Pandas expertise, focused on merging and preparing multiple related datasets without overcomplicating the solution.
 Context: You will receive several already-cleaned CSV files that share a common key: categories, genres, games, tags, reviews, and steamspy_insights — all keyed on app_id. Each file may have its own missing-value conventions, dtypes, and possibly overlapping or duplicate records.
 Objective: Merge all files into a single master dataset on app_id, explore it thoroughly, and prepare it for analysis — without deleting any rows and without inventing data. The master dataset should remain a clean, reusable merge — not a snapshot tied to one particular analysis.
@@ -87,6 +89,8 @@ sources = {
     "reviews": reviews,
     "steamspy": steamspy,
 }
+
+# Descriptions dataset was decided to be excluded from the scope of this analysis and hence, it is not included in the merge. It can be merged later if needed, but for now, we focus on the other four datasets.
 
 print("=" * 70)
 print("STEP 1: PER-FILE INSPECTION")
