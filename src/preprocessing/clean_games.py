@@ -641,8 +641,8 @@ from pathlib import Path
 # 1. CONFIGURATION
 # =============================================================================
 
-SRC = "data/raw/games.zip"
-OUT = "data/processed/games_cleaned.csv"
+INPUT_PATH = "data/raw/games.zip"
+OUTPUT_PATH = "data/processed/games_cleaned.csv"
 
 
 # =============================================================================
@@ -650,7 +650,7 @@ OUT = "data/processed/games_cleaned.csv"
 # =============================================================================
 
 df_raw = pd.read_csv(
-    SRC,
+    INPUT_PATH,
     escapechar='\\'
 )
 
@@ -784,6 +784,6 @@ df["language_count"] = (
 # 15. SAVE FINAL DATASET
 # =============================================================================
 
-Path(OUT).parent.mkdir(parents=True, exist_ok=True)
+Path(OUTPUT_PATH).parent.mkdir(parents=True, exist_ok=True)
 
-df.to_csv(OUT, index=False)
+df.to_csv(OUTPUT_PATH, index=False)
