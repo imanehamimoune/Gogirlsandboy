@@ -557,7 +557,7 @@ The input file already contains the four dimension scores.
 
 The relevant columns are:
 
-- primary_publisher
+- publisher_primary
 - scale_reach_score
 - quality_score
 - engagement_score
@@ -605,7 +605,7 @@ Report the shape of the dataset.
 Use the following columns:
 
 Publisher:
-    primary_publisher
+    publisher_primary
 
 Dimension scores:
     scale_reach_score
@@ -777,7 +777,7 @@ Use:
 
 Save the plot as:
 
-../../data/feature_analysis/sensitivity_plots/publisher_score_sensitivity.png
+data/feature_analysis/sensitivity_plots/publisher_score_sensitivity.png
 
 Do not create any other plots.
 
@@ -864,11 +864,11 @@ import matplotlib.pyplot as plt
 # 1. CONFIGURATION
 # =============================================================================
 
-INPUT_PATH = Path("../../data/feature_analysis/publisher_scores.csv")
-OUTPUT_DIR = Path("../../data/feature_analysis/sensitivity_plots")
+INPUT_PATH = Path("data/feature_analysis/publisher_scores.csv")
+OUTPUT_DIR = Path("data/feature_analysis/sensitivity_plots")
 OUTPUT_PATH = OUTPUT_DIR / "publisher_score_sensitivity.png"
 
-PUBLISHER_COLUMN = "primary_publisher"
+PUBLISHER_COLUMN = "publisher_primary"
 OVERALL_SCORE_COLUMN = "overall_score"
 
 DIMENSION_COLUMNS = {
