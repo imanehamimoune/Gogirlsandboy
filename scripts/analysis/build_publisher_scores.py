@@ -79,7 +79,7 @@ print("Loaded publisher_features.csv:", df.shape)
 # Scope decisions (stated explicitly, per the prompt):
 #   - "Player count" / "language count" -> avg_owners_mid_norm /
 #     avg_language_count_norm (already-normalized reach features).
-#   - Quality has no stated sub-split. Resolved as a 50/50 blend of
+#   - Quality as a 50/50 blend of
 #     review_score (min-max'd to 0-1 in TASK 3) and avg_positive_review_ratio
 #     (already 0-1).
 #   - Engagement has only one signal (avg_active_users_rate_norm) -- no
