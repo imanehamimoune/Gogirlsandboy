@@ -306,7 +306,7 @@ The lower weight prevents recent publishing activity from outweighing demonstrat
 
 The resulting **35% / 30% / 20% / 15%** weighting represents an analytical judgment about the relative importance of the four dimensions rather than an objectively determined weighting scheme.
 
-A sensitivity analysis was therefore conducted to assess whether the resulting rankings remained stable under plausible alternative top-level weighting assumptions.
+A sensitivity analysis was therefore conducted to assess how strongly the overall scores of the highest-ranked publishers depended on plausible alternative top-level weighting assumptions.
 
 ### Missing Dimension Scores
 
@@ -338,24 +338,15 @@ The calculated dimension scores and overall scores were checked to ensure that a
 
 ## Sensitivity Analysis
 
-Because the overall publisher ranking depends partly on the weights assigned to the four performance dimensions, a sensitivity analysis was conducted to assess how strongly the results depended on the baseline weighting assumptions.
+Because the overall publisher score depends partly on the weights assigned to the four performance dimensions, a sensitivity analysis was conducted to assess how strongly publisher scores depend on the baseline weighting assumptions.
 
-The purpose of the sensitivity analysis was to assess the **robustness of the chosen baseline**, not to identify or optimize a different weighting scheme.
+The purpose of the sensitivity analysis was not to identify or optimize an alternative weighting scheme. Instead, it served as a robustness check by examining how much the scores of the highest-ranked publishers could change under reasonable alternative top-level weights.
 
-### What Was Varied
-
-Only the four **top-level dimension weights** were varied.
-
-The internal composition of the four dimensions remained constant throughout the analysis:
-
-* Scale & Reach remained weighted 80/20 internally.
-* Quality remained weighted 50/50 internally.
-* Engagement retained its single-feature definition.
-* Growth & Momentum remained weighted 60/40 internally.
-
-This isolated the effect of changing the relative importance assigned to the four dimensions while keeping the underlying features and dimension definitions unchanged.
+The internal dimension scores were held constant throughout the analysis. Only the four top-level weights assigned to Scale & Reach, Quality, Engagement, and Growth & Momentum were varied. This ensured that the sensitivity analysis isolated the effect of the top-level weighting assumptions without changing the underlying feature construction or dimension definitions.
 
 ### Weight Scenarios
+
+The baseline weights were varied within the following ranges:
 
 | Dimension         | Baseline | Tested range |
 | ----------------- | -------: | -----------: |
@@ -364,149 +355,31 @@ This isolated the effect of changing the relative importance assigned to the fou
 | Engagement        |      20% |       10–30% |
 | Growth & Momentum |      15% |        5–25% |
 
-Each dimension was allowed to vary by up to **10 percentage points above or below its baseline weight**.
+Each dimension was allowed to vary by up to **10 percentage points above or below its baseline weight**. The tested values were defined in increments of **5 percentage points**.
 
-This range was selected to represent meaningful alternative weighting assumptions without fundamentally redefining the scoring framework.
+All possible combinations of the specified values were generated programmatically. Only combinations in which the four weights summed to exactly 100% were retained as valid scenarios. The baseline weighting of 35% / 30% / 20% / 15% was included among the valid combinations.
 
-Weights were varied in increments of **5 percentage points**.
+For each valid combination, a new overall publisher score was calculated using the existing four dimension scores:
 
-All combinations within the specified ranges were generated programmatically, and only combinations whose four weights summed to 100% were retained as valid scenarios.
+`Scenario Score = w₁ × Scale & Reach + w₂ × Quality + w₃ × Engagement + w₄ × Growth & Momentum`
 
-For every valid scenario, publisher overall scores and rankings were recalculated.
+The underlying dimension scores remained unchanged across all scenarios.
 
-The following remained unchanged:
+### Baseline Top-10 Score Sensitivity
 
-* publisher population,
-* underlying features,
-* feature normalization,
-* missing-value treatment, and
-* within-dimension weights.
+The ten highest-ranked publishers were identified using their original baseline `overall_score` before the sensitivity results were examined. This ensured that publishers were selected according to the original scoring model rather than according to their performance under alternative weighting scenarios.
 
----
+For each of these baseline Top 10 publishers, three values were calculated:
 
-## Ranking Stability
+| Measure        | Description                                                               |
+| -------------- | ------------------------------------------------------------------------- |
+| Minimum score  | Lowest overall score across all valid weighting combinations              |
+| Baseline score | Original overall score under the 35% / 30% / 20% / 15% baseline weighting |
+| Maximum score  | Highest overall score across all valid weighting combinations             |
 
-Each alternative ranking was compared with the baseline ranking using several complementary measures.
+The resulting score ranges were used to evaluate how strongly each leading publisher's numerical score depended on the selected top-level weights.
 
-| Measure                       | Purpose                                                                                           |
-| ----------------------------- | ------------------------------------------------------------------------------------------------- |
-| **Mean absolute rank change** | Measures the average magnitude of publisher movements relative to baseline positions              |
-| **Spearman rank correlation** | Measures similarity between each scenario's publisher ranking and the baseline ranking            |
-| **Top-N overlap**             | Measures how many baseline Top 5, Top 10, and Top 20 publishers remain in the corresponding group |
-
-### Mean Absolute Rank Change
-
-Mean absolute rank change provides a direct indication of how much publisher positions typically change under an alternative weighting scenario.
-
-### Spearman Rank Correlation
-
-Spearman rank correlation measures the similarity between each scenario's publisher ranking and the baseline ranking.
-
-Values closer to 1 indicate that the overall ordering of publishers remained similar despite changes in the top-level weights.
-
-### Top-N Overlap
-
-Top-N overlap was calculated for:
-
-* Top 5,
-* Top 10, and
-* Top 20.
-
-It represents the proportion of publishers from the corresponding baseline group that remained within that group under each alternative weighting scenario.
-
-### Joint Interpretation
-
-These measures were considered jointly because overall ranking stability does not necessarily imply stability among the highest-ranked publishers.
-
-A scenario may produce a high Spearman correlation while still changing membership within the Top 5 or Top 10.
-
----
-
-## Publisher-Level Sensitivity
-
-Sensitivity was also assessed separately for each publisher across all valid weighting scenarios.
-
-### Publisher-Level Measures
-
-For each publisher, the analysis calculated:
-
-* minimum overall score,
-* maximum overall score,
-* mean overall score,
-* score standard deviation,
-* score range,
-* minimum rank,
-* maximum rank,
-* rank range, and
-* mean absolute change from the baseline rank.
-
-The proportion of valid scenarios in which each publisher appeared in the following groups was also calculated:
-
-* Top 5,
-* Top 10,
-* Top 20.
-
-These measures were used to identify publishers whose relative performance remained stable across alternative weighting assumptions and publishers whose position was more dependent on the selected weights.
-
-### Interpretation
-
-No fixed threshold was imposed to classify publishers as stable or sensitive.
-
-Instead, stability was evaluated using the observed combination of:
-
-* rank range,
-* score range,
-* mean absolute rank change, and
-* Top-N frequency.
-
----
-
-## Dimension-Level Sensitivity
-
-The relationship between individual dimension weights and overall ranking stability was examined across the valid sensitivity scenarios.
-
-For each dimension, Pearson correlations were calculated between its assigned top-level weight and:
-
-* mean absolute publisher rank change; and
-* the Spearman correlation between the scenario ranking and the baseline ranking.
-
-### Interpretation
-
-These correlations were interpreted as **descriptive measures of association within the constrained scenario space rather than causal effects**.
-
-Because the four weights were required to sum to 100%, increasing the weight assigned to one dimension necessarily required changes to one or more of the remaining dimensions.
-
-The resulting associations therefore indicate which weighting changes were most strongly associated with ranking sensitivity within the tested scenarios, not which dimension independently caused ranking changes.
-
----
-
-## Representative Weighting Scenarios
-
-In addition to the complete sensitivity grid, controlled representative scenarios were constructed to provide more interpretable comparisons with the baseline model.
-
-### Scenario Construction
-
-For each of the four dimensions:
-
-1. Its baseline weight was increased by **10 percentage points**.
-2. The weights assigned to the other three dimensions were reduced proportionally according to their baseline shares.
-3. Their relative proportions were therefore maintained.
-4. The total weight remained 100%.
-
-Publisher scores and rankings were recalculated under each representative scenario.
-
-The following were then compared with the baseline:
-
-* ranking similarity,
-* mean absolute rank change,
-* Top-5 overlap,
-* Top-10 overlap,
-* Top-20 overlap, and
-* changes among highly ranked publishers.
-
-The complete sensitivity grid remained the **primary robustness analysis**.
-
-The representative scenarios were included to make the effect of placing substantially greater emphasis on one dimension at a time easier to interpret.
+The analysis evaluates **score sensitivity rather than ranking sensitivity**. It therefore does not assess rank changes, rank correlations, or Top-N retention under alternative weighting scenarios.
 
 ---
 
@@ -533,33 +406,21 @@ During scoring:
 * publisher identifiers were checked for duplicates; and
 * publishers with missing overall scores were identified rather than silently removed or reweighted.
 
-### Baseline Reconstruction
+### Sensitivity-Analysis Validation
 
-Before alternative sensitivity scenarios were evaluated, the baseline scoring model was reconstructed directly from `publisher_features.csv`.
+The sensitivity analysis was checked to ensure that:
 
-The reconstruction used the same:
+* each set of top-level weights remained within its predefined range;
+* each weight used one of the specified 5-percentage-point increments;
+* the four weights summed to exactly 100%;
+* each valid weighting combination occurred only once; and
+* the baseline 35% / 30% / 20% / 15% weighting was included among the valid scenarios.
 
-* feature definitions,
-* within-dimension weights,
-* top-level weights,
-* missing-value treatment, and
-* ranking method
+The four underlying dimension scores were held constant across scenarios so that only the effect of changing the top-level weights was assessed.
 
-as the original scoring procedure.
+For each valid weighting combination, the recalculated overall scores were checked to ensure that non-missing values remained within the expected 0–1 range.
 
-The reconstructed publisher population, dimension scores, overall scores, and ranks were then compared with `publisher_scores.csv` as a reference validation step.
+The baseline Top 10 publishers were selected using the original `overall_score` before the alternative scenario results were examined. Their minimum and maximum scenario scores were then calculated across the complete set of valid weighting combinations.
 
-### Sensitivity-Scenario Validation
+These validation procedures were intended to ensure that differences in the observed score ranges resulted from changes in the top-level weighting assumptions rather than changes in publisher selection, feature construction, dimension construction, or scenario generation.
 
-Sensitivity scenarios were checked to ensure that:
-
-* each set of weights remained within its predefined range;
-* each set of weights summed to 100%;
-* each scenario occurred only once; and
-* the baseline scenario was included exactly once.
-
-Scenario-level scores were checked to remain within the 0–1 range where available.
-
-Publisher–scenario combinations were checked for duplicates, and rankings were independently verified against the calculated overall scores.
-
-These validation procedures were intended to ensure that differences observed in the sensitivity analysis resulted from changes in the top-level weighting assumptions rather than inconsistencies in feature construction, scoring, or scenario generation.

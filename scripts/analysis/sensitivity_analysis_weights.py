@@ -50,7 +50,7 @@ The relevant project structure is:
 project/
 │
 ├── data/
-│   └── feature_analysis/
+│   └── analysis/
 │       └── publisher_scores.csv
 │
 └── src/
@@ -59,13 +59,13 @@ project/
 
 Read the data from:
 
-../../data/feature_analysis/publisher_scores.csv
+data/analysis/publisher_scores.csv
 
 Do not modify the input file.
 
 Save the generated plot to:
 
-../../data/feature_analysis/sensitivity_plots/
+data/analysis/sensitivity_plots/
 
 Create the output directory automatically if it does not exist.
 
@@ -253,7 +253,7 @@ Use:
 
 Save the plot as:
 
-data/feature_analysis/sensitivity_plots/publisher_score_sensitivity.png
+data/analysis/sensitivity_plots/publisher_score_sensitivity.png
 
 Do not create any other plots.
 
