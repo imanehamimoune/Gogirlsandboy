@@ -172,7 +172,7 @@ Valve achieved the highest overall score at **0.783**.
 
 Valve performed particularly strongly in Scale & Reach, Quality, and Engagement.
 
-Its Growth & Momentum score of **0.000** is not the result of missing data. Within the dataset, Valve is represented by 36 games but has a `recent_release_count` of zero.
+Valve's Growth & Momentum score of **0.000** results from the release-date-based definition used by the model. No Valve title with an available release date falls within the defined two-year recent-release window. However, this measure may understate Valve's current development activity because some actively maintained or relaunched titles have missing release dates in the dataset. The implications of this data limitation are discussed further in `limitations.md`.
 
 Consequently, both `recent_release_ratio` and `recent_release_count_norm`, the two components of the Growth & Momentum dimension, are zero.
 
