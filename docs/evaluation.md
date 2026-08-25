@@ -155,12 +155,6 @@ None of these publishers appeared in the baseline overall Top 10.
 
 Valve provides a contrasting example. Despite ranking first overall, Valve received a Growth & Momentum score of **0.000**. Its first-place position was therefore driven by exceptionally strong performance in Scale & Reach, Quality, and Engagement rather than recent release activity.
 
-### Dimension-Level Interpretation
-
-Overall, the individual-dimension results support the use of a multidimensional scoring framework.
-
-Publishers that dominate an individual KPI are not automatically identified as the strongest overall candidates. The final score instead reflects performance across several complementary characteristics.
-
 ---
 
 ## Performance of the Leading Publishers
@@ -186,9 +180,7 @@ Under the methodology's definition of a recent release, none of Valve's observed
 
 Its first-place overall ranking was achieved despite this result because of its exceptionally strong performance across the other three dimensions.
 
-This illustrates an important characteristic of the weighted model: strong performance across the more heavily weighted dimensions can compensate for weakness in a lower-weighted dimension.
-
-It also highlights why the individual dimension scores should be examined alongside the overall ranking rather than interpreting the overall score in isolation.
+This illustrates an important characteristic of the weighted model: strong performance across the more heavily weighted dimensions can compensate for weakness in a lower-weighted dimension. It also highlights why the individual dimension scores should be examined alongside the overall ranking.
 
 ### Coffee Stain Publishing
 
@@ -203,9 +195,7 @@ Coffee Stain Publishing ranked second with an overall score of **0.767**.
 
 Coffee Stain Publishing performed particularly strongly in Quality and Engagement.
 
-Compared with Valve, it achieved lower Scale & Reach but greater Growth & Momentum.
-
-Its high ranking therefore reflects comparatively balanced performance across the dimensions, with particularly strong player reception and continued engagement.
+Compared with Valve, it achieved lower Scale & Reach but greater Growth & Momentum. Its high ranking therefore reflects comparatively balanced performance across the dimensions, with particularly strong player reception and continued engagement.
 
 ### PlayStation Publishing LLC
 
@@ -369,9 +359,7 @@ The resulting score ranges were:
 
 ### Interpretation
 
-The results show that publisher scores are meaningfully affected by the top-level weighting assumptions.
-
-This is expected because publishers have different strengths across the four performance dimensions.
+Publisher scores are meaningfully affected by the top-level weighting assumptions because publishers have different strengths across the four performance dimensions.
 
 Among the baseline Top 10:
 
@@ -385,13 +373,11 @@ The narrowest ranges were observed for:
 * **Electronic Arts:** approximately **0.141**; and
 * **CAPCOM:** approximately **0.152**.
 
-A wider range indicates that a publisher's overall numerical assessment is more responsive to changes in the relative importance assigned to the four dimensions.
+A wider range indicates that a publisher's overall numerical assessment is more responsive to changes in the relative importance assigned to the four dimensions. It does **not** necessarily indicate weaker performance.
 
-It does **not** necessarily indicate that the publisher is weaker. Rather, it indicates that its score depends more strongly on which dimensions are prioritized.
+Valve provides a clear example. Its combination of very strong Scale & Reach, Quality, and Engagement with a Growth & Momentum score of zero creates an uneven performance profile, making its overall score comparatively responsive to changes in the top-level weights.
 
-Valve provides a clear example. Its combination of very strong Scale & Reach, Quality, and Engagement with a Growth & Momentum score of zero creates an uneven performance profile. Its overall score consequently responds relatively strongly when weight is shifted between these dimensions.
-
-CAPCOM's score range is narrower than those of Valve and Coffee Stain Publishing, indicating that its numerical score is somewhat less sensitive to the tested top-level weighting assumptions.
+CAPCOM's narrower score range indicates that its numerical score is somewhat less sensitive to the tested weighting assumptions.
 
 ---
 
@@ -410,15 +396,9 @@ For example:
 
 Valve has the highest baseline score, but its tested range overlaps with those of Coffee Stain Publishing, PlayStation Publishing LLC, and CAPCOM.
 
-This overlap indicates that the differences between baseline scores are relatively small compared with the score changes that can result from alternative weighting assumptions.
+This overlap indicates that the differences between baseline scores are relatively small compared with the score changes that can result from alternative weighting assumptions. The baseline ordering should therefore not be interpreted as evidence that one publisher is unambiguously superior to another under every reasonable set of priorities.
 
-The baseline ordering should therefore not be interpreted as evidence that one publisher is unambiguously superior to another under every reasonable set of priorities.
-
-### Important Limitation
-
-Overlapping score ranges do **not** demonstrate that publishers actually exchange ranking positions under the same weighting scenario.
-
-A publisher's minimum and another publisher's maximum may occur under different combinations of weights.
+However, overlapping score ranges do **not** demonstrate that publishers actually exchange ranking positions under the same weighting scenario. A publisher's minimum and another publisher's maximum may occur under different combinations of weights.
 
 The ranges therefore provide evidence of **score sensitivity rather than ranking instability**.
 
@@ -426,7 +406,7 @@ The ranges therefore provide evidence of **score sensitivity rather than ranking
 
 ## Shortlisted Candidates Under Alternative Weights
 
-All three shortlisted candidates experienced changes in their overall scores when the top-level dimension weights were varied.
+The three shortlisted candidates all experienced changes in their overall scores when the top-level dimension weights were varied:
 
 | Candidate               | Minimum | Baseline | Maximum | Approx. Range |
 | ----------------------- | ------: | -------: | ------: | ------------: |
@@ -434,29 +414,13 @@ All three shortlisted candidates experienced changes in their overall scores whe
 | Coffee Stain Publishing |   0.678 |    0.767 |   0.856 |         0.178 |
 | CAPCOM Co., Ltd.        |   0.664 |    0.740 |   0.816 |         0.152 |
 
-### Valve
+Valve's comparatively broad range is consistent with its uneven dimension profile.
 
-Valve's baseline score of **0.783** varied between **0.689 and 0.877**.
+Coffee Stain Publishing's strong Quality and Engagement performance supports its assessment across different assumptions, although its exact score remains sensitive to the relative dimension weights.
 
-Its comparatively broad range is consistent with its uneven dimension profile: Valve performs exceptionally strongly in Scale & Reach, Quality, and Engagement but has a Growth & Momentum score of zero.
+CAPCOM's score range is somewhat narrower than those of Valve and Coffee Stain Publishing. Its strong Engagement and Growth & Momentum also mean that its assessment benefits relatively more when these dimensions receive greater emphasis.
 
-### Coffee Stain Publishing
-
-Coffee Stain Publishing's score varied between **0.678 and 0.856**, compared with its baseline score of **0.767**.
-
-Its strong Quality and Engagement performance supports its assessment across different assumptions, although the exact score remains sensitive to the relative dimension weights.
-
-### CAPCOM Co., Ltd.
-
-CAPCOM's baseline score of **0.740** varied between **0.664 and 0.816**.
-
-Its score range is somewhat narrower than those of Valve and Coffee Stain Publishing.
-
-Its strong Engagement and Growth & Momentum also mean that its assessment benefits relatively more when these dimensions receive greater emphasis.
-
-### Shortlist Interpretation
-
-The sensitivity results reinforce the interpretation of the three candidates as publishers with different performance profiles rather than treating the exact baseline score differences as fixed measures of relative attractiveness.
+The sensitivity results therefore reinforce the interpretation of the three candidates as publishers with different performance profiles rather than treating the exact baseline score differences as fixed measures of relative attractiveness.
 
 ---
 
@@ -475,9 +439,7 @@ The analysis therefore does **not** measure:
 
 Consequently, the current results cannot establish whether the publisher ranking itself is robust to alternative weighting assumptions.
 
-For example, Valve's numerical score changes substantially across the tested scenarios, but this does not establish whether it remains first, moves several positions, or is overtaken by another publisher.
-
-Conversely, a publisher with a relatively narrow score range could still experience ranking changes if several competing publishers have similar scores.
+For example, Valve's numerical score changes substantially across the tested scenarios, but this does not establish whether it remains first, moves several positions, or is overtaken by another publisher. Conversely, a publisher with a relatively narrow score range could still experience ranking changes if several competing publishers have similar scores.
 
 A separate ranking-sensitivity analysis would be required to determine whether alternative weighting assumptions materially change publisher positions or shortlist membership.
 
@@ -510,11 +472,7 @@ Missingness was limited primarily to:
 
 This resulted in **24 publishers** receiving a missing Quality score and therefore a missing overall score.
 
-No missing dimension scores occurred for:
-
-* Scale & Reach,
-* Engagement, or
-* Growth & Momentum.
+No missing dimension scores occurred for Scale & Reach, Engagement, or Growth & Momentum.
 
 All non-missing dimension scores and overall scores remained within the expected 0–1 range.
 
@@ -543,9 +501,7 @@ Under the baseline weighting scheme:
 
 After applying the feasibility screen, **Valve, Coffee Stain Publishing, and CAPCOM** formed the three-candidate shortlist.
 
-The individual-dimension results demonstrate that publishers leading a single performance category are not necessarily the publishers with the highest overall scores. The framework therefore provides information beyond a single-KPI ranking by requiring publishers to perform competitively across several dimensions.
-
-The shortlisted publishers reach their high overall scores through different combinations of strengths:
+The dimension results show that the shortlisted publishers reach their high overall scores through different combinations of strengths:
 
 * **Valve** combines exceptional Scale & Reach with strong Quality and Engagement.
 * **Coffee Stain Publishing** combines particularly strong Quality and Engagement with a comparatively balanced profile.
@@ -553,7 +509,7 @@ The shortlisted publishers reach their high overall scores through different com
 
 The sensitivity analysis demonstrates that numerical publisher scores depend meaningfully on the selected top-level weights. Score ranges overlap substantially among several of the leading publishers, reinforcing the importance of treating small baseline score differences cautiously.
 
-At the same time, the sensitivity analysis evaluates **score variation rather than ranking variation**. It therefore cannot establish whether the ordering or membership of the highest-ranked publishers remains stable across alternative weighting scenarios.
+The sensitivity analysis evaluates **score variation rather than ranking variation** and therefore cannot establish whether the ordering or membership of the highest-ranked publishers remains stable across alternative weighting scenarios.
 
 The final shortlist should consequently be interpreted as a **quantitative screening result for subsequent due diligence rather than a definitive investment recommendation**.
 
