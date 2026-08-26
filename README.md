@@ -159,6 +159,18 @@ Detailed results, candidate comparisons, and interpretation are available in [`d
 
 ---
 
+## Note on Presented Results
+
+The publisher rankings reported in this repository may differ slightly from those shown in the project presentation.
+
+After the presentation was prepared, an issue was identified in the analysis code that affected the calculation of the publisher-level scores. The issue was corrected, and the publisher features, scores, rankings, visualizations, and sensitivity analysis were regenerated using the corrected implementation.
+
+As a result, some publishers changed position slightly compared with the rankings presented during the lectures. The results contained in this repository represent the **final corrected version of the analysis** and should therefore be treated as authoritative.
+
+The correction did not change the overall analytical framework, performance dimensions, or interpretation of the scoring methodology.
+
+---
+
 ## Sensitivity Analysis
 
 Because the baseline dimension weights represent analytical judgments, a sensitivity analysis was conducted to examine how strongly publisher scores depend on the selected top-level weights.
