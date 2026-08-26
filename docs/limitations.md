@@ -72,6 +72,16 @@ The Scale & Reach dimension should therefore be interpreted as a **proxy for typ
 
 ---
 
+## Currency Restriction in Game Price Data
+
+Price information extracted from `games.csv` was restricted to observations reported in euros (`EUR`). For games whose reported currency was not EUR, the corresponding price-related fields were treated as missing rather than converted using exchange rates. The game observations themselves were retained.
+
+This decision ensured that nominal prices expressed in different currencies were not directly compared without a currency-conversion methodology. However, it reduces price coverage for games whose available price information was reported only in another currency.
+
+As a result, analyses relying on these price fields may be based on a smaller and potentially non-representative subset of games if currency availability differs across markets or publishers.
+
+---
+
 ## Revenue Estimation
 
 An estimated-revenue variable was constructed as:

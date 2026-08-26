@@ -44,6 +44,8 @@ The following preprocessing steps were applied:
 * The file was loaded using backslash escaping to handle the source formatting.
 * The JSON-formatted `price_overview` field was parsed and expanded into separate `price_*` columns.
 * The original nested `price_overview` column was removed from the processed version.
+* Price information was restricted to observations reported in euros (`EUR`) to ensure that monetary values were comparable across games without introducing a separate currency-conversion procedure.
+* For games whose reported currency was not EUR, the extracted price-related fields were set to missing.
 * The `"N"` placeholder in release dates was replaced with a missing value.
 * Release dates were converted to a datetime format.
 * `is_free` was converted to Boolean format.
@@ -492,17 +494,3 @@ The following transformations were **not applied** during master-dataset constru
 * categorical encoding.
 
 These transformations depend on the subsequent analytical method and were therefore kept separate from the reusable master dataset.
-
----
-
-## AI-Assisted Preprocessing
-
-Generative AI tools were used to assist with portions of the preprocessing code, including:
-
-* data-quality checks,
-* categorical standardization, and
-* dataset integration.
-
-Prompts specified the required cleaning rules, constraints, and validation procedures.
-
-The resulting code was reviewed and adjusted as necessary before being incorporated into the preprocessing pipeline.
