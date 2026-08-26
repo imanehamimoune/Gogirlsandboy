@@ -1209,7 +1209,18 @@ for name, df in [("tags", tags), ("categories", categories), ("genres", genres)]
     print(f"app_ids missing from {name}.csv (present in union but not here): {missing}")
 
 # ---------------------------------------------------------------------------
-# 5. SAVE
+# 5. SAVE MERGED DATA
 # ---------------------------------------------------------------------------
-merged.to_csv(OUT_MERGE, index=False)
+
+OUT_MERGE = "data/processed/categories_tags_genres_merged.zip"
+
+merged.to_csv(
+    OUT_MERGE,
+    index=False,
+    compression={
+        "method": "zip",
+        "archive_name": "categories_tags_genres_merged.csv"
+    }
+)
+
 print(f"\nSaved: {OUT_MERGE}  shape={merged.shape}")
