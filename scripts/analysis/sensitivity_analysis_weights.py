@@ -1,328 +1,100 @@
 ''' PART 3: DOING THE SENSITIVITY ANALYSIS '''
 
 '''
-Role: You are a senior Data Analyst and Python/Pandas expert specializing in scoring models, sensitivity analysis, and data visualization.
-
-Your task is to perform a simple and reproducible sensitivity analysis for an existing publisher scoring model.
-
-The purpose is NOT to optimize the scoring model or find better weights.
-
-The purpose is simply to test:
-
-How much can publisher scores change when the four top-level dimension weights are varied within a reasonable ±10 percentage-point range?
-
-Keep the analysis simple and do not introduce unnecessary calculations.
-
-
----------------------------------------------------------------------------
-1. EXISTING SCORING MODEL
----------------------------------------------------------------------------
-
-The existing publisher scoring model consists of four top-level dimensions:
-
-1. Scale & Reach — 35%
-2. Quality — 30%
-3. Engagement — 20%
-4. Growth & Momentum — 15%
-
-These four top-level weights are the only values that may change.
-
-The internal calculations of these four dimensions have already been completed and must NOT be recalculated.
-
-The input file already contains the four dimension scores.
-
-The relevant columns are:
-
-- publisher_primary
-- scale_reach_score
-- quality_score
-- engagement_score
-- momentum_score
-- overall_score
-
-
----------------------------------------------------------------------------
-2. INPUT AND OUTPUT
----------------------------------------------------------------------------
-
-The relevant project structure is:
-
-project/
-│
-├── data/
-│   └── analysis/
-│       └── publisher_scores.csv
-│
-└── src/
-    └── feature_engineering/
-        └── sensitivity_analysis.py
-
-Read the data from:
-
-data/analysis/publisher_scores.csv
-
-Do not modify the input file.
-
-Save the generated plot to:
-
-data/analysis/sensitivity_plots/
-
-Create the output directory automatically if it does not exist.
-
-
----------------------------------------------------------------------------
-3. LOAD THE DATA
----------------------------------------------------------------------------
-
-Load publisher_scores.csv using pandas.
-
-Report the shape of the dataset.
-
-Use the following columns:
-
-Publisher:
-    publisher_primary
-
-Dimension scores:
-    scale_reach_score
-    quality_score
-    engagement_score
-    momentum_score
-
-The existing overall_score column should be used to determine the baseline Top 10 publishers.
-
-Do not recalculate the internal dimension scores.
-
-
----------------------------------------------------------------------------
-4. WEIGHT SENSITIVITY GRID
----------------------------------------------------------------------------
-
-Test every possible combination of the four top-level dimension weights.
-
-Use 5-percentage-point increments.
-
-Each dimension can vary by ±10 percentage points around its baseline:
-
-Scale & Reach:
-    25% – 45%
-
-Quality:
-    20% – 40%
-
-Engagement:
-    10% – 30%
-
-Growth & Momentum:
-    5% – 25%
-
-Therefore, the possible values are:
-
-Scale & Reach:
-    25%, 30%, 35%, 40%, 45%
-
-Quality:
-    20%, 25%, 30%, 35%, 40%
-
-Engagement:
-    10%, 15%, 20%, 25%, 30%
-
-Growth & Momentum:
-    5%, 10%, 15%, 20%, 25%
-
-Generate all possible combinations programmatically.
-
-Only keep combinations where the four weights sum to exactly 100%.
-
-Do not manually select scenarios.
-
-The baseline combination:
-
-35% / 30% / 20% / 15%
-
-must be included.
-
-IMPORTANT IMPLEMENTATION REQUIREMENT:
-
-The weight values represent exact 5-percentage-point increments.
-
-Avoid floating-point precision problems when generating and validating the
-weight combinations.
-
-Do NOT rely on np.arange() with decimal step sizes if this can introduce
-values such as 0.39999999999999997 instead of 0.40.
-
-Prefer explicitly defined weight values, for example:
-
-Scale & Reach:
-    [0.25, 0.30, 0.35, 0.40, 0.45]
-
-Quality:
-    [0.20, 0.25, 0.30, 0.35, 0.40]
-
-Engagement:
-    [0.10, 0.15, 0.20, 0.25, 0.30]
-
-Growth & Momentum:
-    [0.05, 0.10, 0.15, 0.20, 0.25]
-
-When checking whether weights sum to 100%, use appropriate rounding,
-numerical tolerance, or another robust method rather than relying on raw
-floating-point equality.
-
-The validation must not incorrectly reject valid boundary values because of
-floating-point representation.
-
-
----------------------------------------------------------------------------
-5. CALCULATE SENSITIVITY SCORES
----------------------------------------------------------------------------
-
-For every valid weight combination, calculate an overall score for every publisher.
-
-Use the existing dimension scores:
-
-scenario_score =
-    scale_reach_weight * scale_reach_score
-    + quality_weight * quality_score
-    + engagement_weight * engagement_score
-    + momentum_weight * momentum_score
-
-Only the four top-level weights change.
-
-The underlying dimension scores remain exactly the same for every scenario.
-
-No other calculations are required.
-
-
----------------------------------------------------------------------------
-6. SELECT BASELINE TOP 10
----------------------------------------------------------------------------
-
-Use the existing overall_score column to identify the baseline Top 10 publishers.
-
-Do this BEFORE examining the sensitivity results.
-
-The Top 10 publishers must therefore be determined exclusively from the original baseline scoring model.
-
-Do not select publishers based on their sensitivity results.
-
-
----------------------------------------------------------------------------
-7. CALCULATE SCORE RANGES
----------------------------------------------------------------------------
-
-For each of the baseline Top 10 publishers, calculate:
-
-- minimum score across all valid weight combinations
-- existing baseline overall_score
-- maximum score across all valid weight combinations
-
-These values will be used for the visualization.
-
-
----------------------------------------------------------------------------
-8. CREATE THE PLOT
----------------------------------------------------------------------------
-
-Create exactly ONE plot.
-
-The plot should show the score sensitivity of the baseline Top 10 publishers.
-
-Use a vertical range/error-bar style visualization:
-
-- X-axis = publisher
-- Y-axis = publisher score
-- lower end of the error bar = minimum score
-- central point = baseline overall_score
-- upper end of the error bar = maximum score
-
-Each publisher should appear as one category on the X-axis.
-
-The purpose of the visualization is to show how much each publisher's score can
-change when the top-level dimension weights are varied within the defined
-sensitivity ranges.
-
-Use:
-
-- clear publisher labels on the X-axis
-- a clearly labelled Y-axis
-- an informative title
-- readable formatting
-- appropriate rotation of publisher labels if necessary
-
-Save the plot as:
-
-data/analysis/sensitivity_plots/publisher_score_sensitivity.png
-
-Do not create any other plots.
-
-
----------------------------------------------------------------------------
-9. VALIDATION
----------------------------------------------------------------------------
-
-Perform only the following basic validation:
-
-- confirm that all required columns exist
-- confirm that all generated weight combinations are within their specified ranges
-- confirm that every valid combination sums to 100%
-- confirm that there are no duplicate combinations
-- confirm that the baseline 35/30/20/15 combination is included
-- confirm that minimum score <= baseline score <= maximum score
-- ensure that floating-point representation does not cause valid weight
-  combinations or boundary values to fail validation
-- use rounding, numerical tolerance, or another robust method where
-  appropriate when comparing decimal weights
-
-Print a short summary containing:
-
-- number of publishers
-- total candidate combinations
-- number of valid combinations
-- baseline weights
-- baseline Top 10 publishers
-- minimum, baseline, and maximum score for each Top 10 publisher
-- location of the generated plot
-
-
----------------------------------------------------------------------------
-10. CONSTRAINTS
----------------------------------------------------------------------------
-
-Keep the analysis simple.
-
-Do NOT:
-
-- optimize the weights
-- search for a best weighting scheme
-- analyze ranking stability
-- calculate rank changes
-- calculate Spearman correlations
-- calculate Pearson correlations
-- calculate Top-N stability
-- perform dimension-level sensitivity analysis
-- create scenario IDs
-- create additional scenario summary files
-- recalculate the internal dimension scores
-- redo feature engineering
-- modify publisher_scores.csv
-- introduce additional mathematical analyses
-- create unnecessary output files
-
-The only purpose of the script is:
-
-1. Generate all valid top-level weight combinations within the ±10 percentage-point ranges.
-2. Calculate the resulting publisher scores.
-3. Take the baseline Top 10 publishers.
-4. Determine their minimum, baseline, and maximum scores.
-5. Create one sensitivity plot.
+Role:
+You are a senior Data Analyst and Python/Pandas expert specializing in
+scoring models and sensitivity analysis. This is a minimal, purely
+descriptive check — not an optimization. The goal is only to see how much
+publisher scores move when the 4 top-level dimension weights are varied
+within a reasonable range; it is never to search for better weights.
+
+Context:
+Input is data/analysis/publisher_scores.csv, already containing the 4
+dimension scores and the existing overall_score for every publisher:
+publisher_primary, scale_reach_score, quality_score, engagement_score,
+momentum_score, overall_score. The baseline top-level weights are Scale &
+Reach 35%, Quality 30%, Engagement 20%, Growth & Momentum 15%. Do not
+recompute the 4 dimension scores or modify the input file — they're fixed
+inputs. Script lives at src/feature_engineering/sensitivity_analysis.py.
+
+Objective:
+Produce exactly ONE plot — data/analysis/sensitivity_plots/
+publisher_score_sensitivity.png — showing the min/baseline/max overall
+score range for the baseline Top 10 publishers, across every valid
+top-level weight combination in the grid below. Create the output
+directory if it doesn't exist.
+
+Tasks:
+1. Load publisher_scores.csv, report its shape, and confirm all required
+   columns are present (publisher_primary, overall_score, and the 4
+   dimension score columns) — raise if any are missing.
+2. Select the baseline Top 10 via nlargest(10, overall_score) on the
+   ORIGINAL overall_score column, decided before looking at any
+   sensitivity results. Never reselect the Top 10 based on scenario output.
+3. Build the weight grid — each dimension varies ±10 percentage points
+   around its baseline, in 5-point steps:
+   - Scale & Reach: 25%–45% -> [0.25, 0.30, 0.35, 0.40, 0.45]
+   - Quality: 20%–40% -> [0.20, 0.25, 0.30, 0.35, 0.40]
+   - Engagement: 10%–30% -> [0.10, 0.15, 0.20, 0.25, 0.30]
+   - Growth & Momentum: 5%–25% -> [0.05, 0.10, 0.15, 0.20, 0.25]
+   Use these explicit hardcoded lists, not np.arange with a decimal step —
+   floating-point drift (e.g. 0.39999999999997) can silently break the
+   sum-to-100% check below. Generate every combination via
+   itertools.product, keep only those that sum to exactly 100% — compare
+   using rounded integer percentage points (round(weight * 100)), never
+   raw float equality, so valid boundary values aren't rejected. The
+   baseline 35/30/20/15 combination must appear in the valid set exactly
+   once.
+4. For every valid combination, compute each publisher's scenario score as
+   the weighted sum of their EXISTING dimension scores (no recomputation):
+   scenario_score = w_scale_reach * scale_reach_score
+                   + w_quality * quality_score
+                   + w_engagement * engagement_score
+                   + w_momentum * momentum_score
+5. For the baseline Top 10 only, compute min_score, the existing
+   baseline_score (= their original overall_score), and max_score across
+   all valid-combination scenario scores.
+6. Plot (exactly one, no others): a vertical range/error-bar chart. X-axis
+   = the baseline Top 10 publishers, one category each, clearly labeled
+   (rotated if needed). Y-axis = score. Lower whisker = min_score, center
+   marker = baseline_score, upper whisker = max_score. Clear axis labels
+   and an informative title. Save to the exact path above.
+7. Validate: required columns exist; every combination's weights fall
+   within their stated range; every valid combination sums to 100%
+   (tolerance/rounding-based, not raw float equality); no duplicate
+   combinations; the baseline combination is present exactly once; and
+   min_score <= baseline_score <= max_score for every Top 10 publisher.
+8. Print a short summary: publisher count, candidate vs. valid combination
+   counts, baseline weights, and the baseline Top 10 with their
+   min/baseline/max scores and the saved plot path.
+
+Constraints (Do Not):
+- Do not recompute or alter the 4 existing dimension scores, and do not
+  modify publisher_scores.csv.
+- Do not search for, recommend, or imply a "better" weighting — this is
+  descriptive only.
+- Do not calculate rank changes, Spearman or Pearson correlations, Top-N
+  overlap/stability, dimension-level sensitivity, scenario IDs, or any
+  additional summary/output files.
+- Do not create more than one plot.
+- Do not select the Top 10 using anything other than the original,
+  pre-sensitivity overall_score.
+- Do not use raw floating-point equality anywhere weights are compared or
+  summed — use rounding or a numerical tolerance.
+- Keep the implementation concise and transparent — no unnecessary
+  calculations beyond what's listed above.
+
+Expected Output:
+One script (scripts/analysis/sensitivity_analysis.py) that reads
+publisher_scores.csv and produces exactly one output file —
+data/analysis/sensitivity_plots/publisher_score_sensitivity.png — plus the
+printed summary from Task 8. No other files created.
 
 Keep the Python implementation concise, transparent, and reproducible.
 '''
 
 # Request: 2026-08-21 19:47 CET.
-# Author: Christian Beemelmann (prompt and adjustments), ChatGPT (simplification)
+# Author: Christian Beemelmann (prompt and adjustments), ChatGPT (code and simplification)
 
 
 # =============================================================================
